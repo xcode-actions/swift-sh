@@ -8,7 +8,7 @@ import Path
 
 public func edit(path: Path) throws -> Never {
 #if os(macOS)
-	let input:Script.Input = .path(path)
+	let input: Script.Input = .path(path)
 	let deps = try StreamReader(path: path).compactMap { try ImportSpecification(line: $0, from: input) }
 	let script = Script(for: .path(path), dependencies: deps)
 	try script.write()
