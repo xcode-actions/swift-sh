@@ -1,4 +1,4 @@
-# `swift sh` ![badge-platforms] ![badge-languages] [![Build Status](https://travis-ci.com/mxcl/swift-sh.svg)](https://travis-ci.com/mxcl/swift-sh)
+# `swift sh` ![badge-platforms] ![badge-languages]
 
 Writing Swift scripts is *easy*:
 
@@ -80,17 +80,15 @@ Otherwise it is hard for me to justify maintaining it.
 # Installation
 
 ```
-brew install swift-sh
+brew install xcode-actions/tap/swift-sh
 ```
+The current official `swift-sh` formula is outdated as the original author stopped maintaining it.
 
 Or you can build manually using `swift build`.
 
-Installation results in a single executable called `swift-sh`, the `swift`
-executable will call this (provided it is in your `PATH`) when you type:
-`swift sh`.
+Installation results in a single executable called `swift-sh`, the `swift` executable will call this (provided it is in your `PATH`) when you type: `swift sh`.
 
-We actively support both Linux and Mac and will support Windows as soon as it is
-possible to do so.
+We actively support both Linux and Mac and will support Windows as soon as it is possible to do so.
 
 # Usage
 
@@ -139,16 +137,14 @@ import Bloibles  // @mxcl == 1.0.0-alpha.1
 // this is per Semantic Versioning guidelines
 ```
 
-`swift-sh` reads the comments after your imports and fetches the requested
-SwiftPM dependencies.
+`swift-sh` reads the comments after your imports and fetches the requested SwiftPM dependencies.
 
 It is not necessary to add a comment specification for transitive dependencies.
 
 # Editing in Xcode
 
-The following will generate an Xcode project (not in the working directory, we
-keep it out the way in our cache directory) and open it, edits are saved to your
-script file.
+The following will generate an Xcode project (not in the working directory, we keep it out the way in our cache directory) and open it,
+ edits are saved to your script file.
 
 ```
 $ swift sh edit ./myScript
@@ -161,47 +157,40 @@ $ swift sh edit ./myScript
 
 # Converting your script to a package
 
-Simple scripts can quickly become bigger projects that would benefit from being
-packages that you build with SwiftPM. To help you migrate your project we
-provide `swift sh eject`, for example:
+Simple scripts can quickly become bigger projects that would benefit from being packages that you build with SwiftPM.
+To help you migrate your project we provide `swift sh eject`, for example:
 
     $ swift sh eject foo.swift
 
-creates a Swift package in `./Foo`, from now on use `swift build` in the
-`Foo` directory. Your script is now `./Foo/Sources/main.swift`.
+creates a Swift package in `./Foo`, from now on use `swift build` in the `Foo` directory.
+Your script is now `./Foo/Sources/main.swift`.
 
 # Use in CI
 
 If you want to make scripts available to people using CI; use `stdin`:
 
-    brew install mxcl/made/swift-sh
+    brew install xcode-actions/tap/swift-sh
     swift sh <(curl http://example.com/yourscript) arg1 arg2
 
 # Internal Details
 
-`swift sh` creates a Swift `Package.swift` package manager project with 
-dependencies in a directory below the swift-sh cache directory †, 
-builds the executable, and then executes it via `swift run`.  
+`swift sh` creates a Swift `Package.swift` package manager project with dependencies in a directory below the swift-sh cache directory †,
+ builds the executable, and then executes it via `swift run`.  
 The script is (only) rebuilt when the script file is newer than the executable.
 
-† Specify the cache parent directory using the (FreeDesktop) environment 
-variable XDG_CACHE_HOME.  If unspecified, on macOS `swif-sh` uses
-`$HOME/Library/Developer/swift-sh.cache`, and otherwise it uses
-`$HOME/.cache/swift-sh`.
+† Specify the cache parent directory using the (FreeDesktop) environment  variable XDG_CACHE_HOME.
+If unspecified, on macOS `swif-sh` uses `$HOME/Library/Developer/swift-sh.cache`, and otherwise it uses `$HOME/.cache/swift-sh`.
 
 # Swift Versions
 
-`swfit-sh` v2 requires Swift 5.1. We had to drop support for Swift v4.2
-because maintenance was just too tricky.
+`swfit-sh` v2 requires Swift 5.5.
 
-`swift-sh` uses the active tools version, (ie: `xcode-select`) or whichever
-Swift is first in the `PATH` on Linux. It writes a manifest for the package
-it will `swift build` with that tools-version. Thus Xcode 11.0 builds with Swift 5.1.
-Dependencies build with the Swift versions they declare support for, provided
-the active toolchain can do that (eg. Xcode 11.0 supports Swift 4.2 and above)
+`swift-sh` uses the active tools version, (ie: `xcode-select`) or whichever Swift is first in the `PATH` on Linux.
+It writes a manifest for the package it will `swift build` with that tools-version.
+Thus Xcode 11.0 builds with Swift 5.1.
+Dependencies build with the Swift versions they declare support for, provided the active toolchain can do that (eg. Xcode 11.0 supports Swift 4.2 and above).
 
-To declare a support for specific Swift versions in your script itself, use
-`#if swift` or `#if compiler` directives.
+To declare a support for specific Swift versions in your script itself, use `#if swift` or `#if compiler` directives.
 
 # Alternatives
 
@@ -214,12 +203,11 @@ To declare a support for specific Swift versions in your script itself, use
 
 ### `error: unable to invoke subcommand: /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swift-sh`
 
-If you got here via Google, you have a script that uses this tool, if you now
-install `swift-sh`, you will be able to run your script:
+If you got here via Google, you have a script that uses this tool, if you now install `swift-sh`, you will be able to run your script:
 
-    brew install mxcl/made/swift-sh
+    brew install xcode-actions/tap/swift-sh
 
 Or see the [above installation instructions](#Installation).
 
 [badge-platforms]: https://img.shields.io/badge/platforms-macOS%20%7C%20Linux-lightgrey.svg
-[badge-languages]: https://img.shields.io/badge/swift-5.1%20%7C%205.2%20%7C%205.3%20%7C%205.4%20%7C%205.5%20%7C%205.6%20%7C%205.7-orange.svg
+[badge-languages]: https://img.shields.io/badge/swift-5.5%20%7C%205.6%20%7C%205.7-orange.svg

@@ -1,6 +1,6 @@
 #!/usr/bin/swift sh
-
 import Ink // @JohnSundell == 0.5.0
+
 
 let markdown = """
 # Ink parses markdown and renders to HTML
