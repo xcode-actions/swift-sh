@@ -13,7 +13,7 @@ public struct ImportSpecification : Equatable {
 	let moduleSource: ModuleSource
 	let constraint: Constraint
 	
-	enum ModuleSource : Equatable {
+	enum ModuleSource : Equatable, CustomStringConvertible {
 		
 		static var hasLoggedObsoleteFormatWarning = false
 		
@@ -87,14 +87,32 @@ public struct ImportSpecification : Equatable {
 			}
 		}
 		
+		var description: String {
+			switch self {
+				case let .url(url):    return "ModuleSource.url(\(url))"
+				case let .scp(source): return "ModuleSource.scp(\(source))"
+				case let .local(path): return "ModuleSource.local(\(path))"
+				case let .github(user, repo): return "ModuleSource.github(\(user), \(repo ?? "nil"))"
+			}
+		}
+		
 	}
 	
-	enum Constraint : Equatable {
+	enum Constraint : Equatable, CustomStringConvertible {
 		
 		case upToNextMajor(from: Version)
 		case exact(Version)
 		case ref(String)
 		case latest
+		
+		var description: String {
+			switch self {
+				case let .upToNextMajor(version): return "Constraint.upToNextMajor(\(version))"
+				case let .exact(version):         return "Constraint.exact(\(version))"
+				case let .ref(ref):               return "Constraint.ref(\(ref))"
+				case     .latest:                 return "Constraint.latest"
+			}
+		}
 		
 	}
 	
