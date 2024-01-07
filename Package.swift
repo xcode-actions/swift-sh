@@ -1,31 +1,33 @@
-// swift-tools-version:5.5
+// swift-tools-version:5.7
 import PackageDescription
 
 
 let package = Package(
 	name: "swift-sh",
 	platforms: [
-		.macOS(.v11)
+		.macOS(.v13)
 	],
-	products: { var ret: [Product] = [
+	products: { let ret: [Product] = [
 		.executable(name: "swift-sh", targets: ["swift-sh"])]
 		return ret
 	}(),
-	dependencies: { var ret: [Package.Dependency] = [
+	dependencies: { let ret: [Package.Dependency] = [
 		.package(url: "https://github.com/apple/swift-argument-parser.git", from: "1.3.0"),
-//		.package(url: "https://github.com/mxcl/Path.swift", from: "1.0.1"),
-//		.package(url: "https://github.com/mxcl/StreamReader", from: "1.0.0"),
-		.package(url: "https://github.com/mxcl/LegibleError", from: "1.0.0"),
-//		.package(url: "https://github.com/mxcl/Version", from: "2.0.0"),
-//		.package(url: "https://github.com/krzyzanowskim/CryptoSwift", "1.3.0"..<"1.4.0"),
-		.package(url: "https://github.com/xcode-actions/clt-logger.git", from: "0.8.0")]
+		.package(url: "https://github.com/Frizlab/stream-reader.git",       from: "3.5.0"),
+		.package(url: "https://github.com/Frizlab/UnwrapOrThrow.git",       from: "1.0.1-rc"),
+		.package(url: "https://github.com/mxcl/LegibleError.git",           from: "1.0.0"),
+		.package(url: "https://github.com/mxcl/Version.git",                from: "2.0.0"),
+		.package(url: "https://github.com/xcode-actions/clt-logger.git",    from: "0.8.0")]
 		return ret
 	}(),
-	targets: { var ret: [Target] = [
+	targets: { let ret: [Target] = [
 		.executableTarget(name: "swift-sh", dependencies: [
 			.product(name: "ArgumentParser", package: "swift-argument-parser"),
 			.product(name: "CLTLogger",      package: "clt-logger"),
-			.product(name: "LegibleError",   package: "LegibleError")
+			.product(name: "LegibleError",   package: "LegibleError"),
+			.product(name: "StreamReader",   package: "stream-reader"),
+			.product(name: "UnwrapOrThrow",  package: "UnwrapOrThrow"),
+			.product(name: "Version",        package: "Version"),
 		], path: "Sources", exclude: ["Legacy"]),
 		.testTarget(name: "swift-shTests", dependencies: [
 			.target(name: "swift-sh")

@@ -12,12 +12,12 @@ enum E : Error {
 
 /** - Parameter line: Contract: Single line string trimmed of whitespace. */
 func parse(_ line: String, from input: Script.Input) throws -> ImportSpecification? {
-	let importModNamePattern = "import\\s+(.*?)"
-	let commentPattern = "\\/\\/"
-	let localFilePattern = "(?:(?:~|[\\./]+)+?[\\w \\/\\.\\-]*)"
-	let repoRefPattern = "(?:(?:[(@|\\w)]?[\\w\\/(@|:)\\.\\-]+))"
-	let repoConstraintPattern = "(?:(==|~>)\\s*([^\\s]+))?"
-	let pattern = "\(importModNamePattern)\\s*\(commentPattern)\\s*(\(localFilePattern)|\(repoRefPattern))\\s*\(repoConstraintPattern)"
+	let importModNamePattern = #"import\s+(.*?)"#
+	let commentPattern = #"\/\/"#
+	let localFilePattern = #"(?:(?:~|[\./]+)+?[\w \/\.\-]*)"#
+	let repoRefPattern = #"(?:(?:[(@|\w)]?[\w\/(@|:)\.\-]+))"#
+	let repoConstraintPattern = #"(?:(==|~>)\s*([^\s]+))?"#
+	let pattern = #"\#(importModNamePattern)\s*\#(commentPattern)\s*(\#(localFilePattern)|\#(repoRefPattern))\s*\#(repoConstraintPattern)"#
 	/* or if you prefer, one big pattern:
 	 *    let pattern = "import\\s+(.*?)\\s*\\/\\/\\s*((?:(?:~|[\\./]+)+?[\\w \\/\\.\\-]*)|(?:(?:[(@|\\w)]?[\\w\\/(@|:)\\.\\-]+)))\\s*(?:(==|~>)\\s*([^\\s]+))?" */
 	let rx = try! NSRegularExpression(pattern: pattern)

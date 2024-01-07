@@ -2,6 +2,7 @@ import Foundation
 
 import ArgumentParser
 import Logging
+import StreamReader
 
 
 
@@ -17,7 +18,32 @@ struct Run : AsyncParsableCommand {
 	var scriptArguments: [String] = []
 	
 	func run() async throws {
-		logger.error("Not implemented")
+		logger.debug("Running script", metadata: ["script-path": "\(scriptPath)", "script-arguments": .array(scriptArguments.map{ "\($0)" })])
+		let scriptURL = URL(fileURLWithPath: scriptPath)
+		
+		let fh = try FileHandle(forReadingFrom: scriptURL)
+		defer {try? fh.close()}
+		
+		/* Let’s parse the source file.
+		 * We’re doing a very bad job at parsing, but that’s mostly on purpose. */
+		let streamReader = FileHandleReader(stream: fh, bufferSize: 3 * 1024, bufferSizeIncrement: 1024)
+		while let (lineData, newLineData) = try streamReader.readLine() {
+//			logger.trace("Received new source line data.", metadata: ["line-data": "\(lineData.reduce("", { $0 + String(format: "%02x", $1) }))"])
+			guard let lineStr = String(data: lineData, encoding: .utf8) else {
+				/* We ignore non-UTF8 lines.
+				 * There should be none (valid UTF8 is a requirement for Swift files), 
+				 *  but if we find any it’s not our job to reject them. */
+				continue
+			}
+			logger.trace("Parsing new source line.", metadata: ["line": "\(lineStr)"])
+			guard let importSpec = ImportSpecification(line: lineStr) else {
+				if (try? #/^(\s*@testable)?\s*import(\s+(class|enum|struct))?\s+[\w_]+(\.[^\s]+)?\s+(//|/*)/#.firstMatch(in: lineStr)) != nil {
+					logger.notice("Found a line starting with import followed by a comment that failed to match an import spec.", metadata: ["line": "\(lineStr)"])
+				}
+				continue
+			}
+			logger.debug("Found new import specification.", metadata: ["import-spec": "\(importSpec)", "line": "\(lineStr)"])
+		}
 	}
 	
 }
