@@ -15,77 +15,10 @@ public struct ImportSpecification : Equatable {
 	
 	enum ModuleSource : Equatable, CustomStringConvertible {
 		
-		static var hasLoggedObsoleteFormatWarning = false
-		
 		case url(URL)
 		case scp(String)
 		case local(String)
 		case github(user: String, repo: String?) /* If repo is nil, the module name should be used. */
-		
-		init?(_ stringToParse: String) {
-			/* Let’s try multiple formats until we find one that work. */
-			do {
-				/* We try the "@GitHubUsername" format first. */
-				let usernameRef = Reference(Substring.self)
-				let repoRef = Reference(String?.self)
-				let regex = Regex{
-					"@"
-					Capture(as: usernameRef){ #/[a-zA-Z0-9-]+/# }
-					Optionally{
-						"/"
-						Capture(as: repoRef){ #/[a-zA-Z0-9._-]+?/# }transform:{ substr in String(substr) }
-						Optionally{ ".git" }
-					}
-				}
-				if let match = try? regex.wholeMatch(in: stringToParse) {
-					self = .github(user: String(match[usernameRef]), repo: match[repoRef])
-					return
-				}
-			}
-			do {
-				/* Next we try the “scp” format.
-				 * We do a lot of assumptions for this format:
-				 *   - we assume only [a-zA-Z0-9] is valid in a username.
-				 *   - we assume only [a-zA-Z0-9.-] is valid in a domain.
-				 *   - we assume only [a-zA-Z0-9._-] is valid in a path. */
-				if (try? #/[a-zA-Z0-9]@[a-zA-Z0-9.-]:[a-zA-Z0-9._-]/#.wholeMatch(in: stringToParse)) != nil {
-					self = .scp(stringToParse)
-					return
-				}
-			}
-			do {
-				/* Next format to try is the legacy “github-username/repo-name” format.
-				 * mxcl used that format for an unknown reason, but I prefer "@github-username/repo-name". */
-				let usernameRef = Reference(Substring.self)
-				let repoRef = Reference(Substring.self)
-				let regex = Regex{
-					/* Note: Same as in first format tested. */
-					Capture(as: usernameRef){ #/[a-zA-Z0-9-]+/# }
-					"/"
-					Capture(as: repoRef){ #/[a-zA-Z0-9._-]+?/# }
-					Optionally{ ".git" }
-				}
-				if let match = try? regex.wholeMatch(in: stringToParse) {
-					if !Self.hasLoggedObsoleteFormatWarning {
-						/* TODO: Find a way to access the logger… */
-						Logger(label: "com.xcode-actions.swift-sh")
-							.notice(#"The “github-username/repo-name” format is deprecated; please use "@github-username/repo-name" instead."#)
-						Self.hasLoggedObsoleteFormatWarning = true
-					}
-					self = .github(user: String(match[usernameRef]), repo: String(match[repoRef]))
-					return
-				}
-			}
-			guard let url = URL(string: stringToParse) else {
-				return nil
-			}
-			if url.scheme != nil {
-				self = .url(url)
-			} else {
-				/* We assume a local path for everything that do not have a scheme and has not the specific formats above. */
-				self = .local(stringToParse)
-			}
-		}
 		
 		var description: String {
 			switch self {
@@ -121,7 +54,7 @@ public struct ImportSpecification : Equatable {
 
 extension ImportSpecification {
 	
-	public init?(line: String) {
+	init?(line: String) {
 		/* Temporary helper structures for the parsing. */
 		struct DummyError : Error {}
 		enum ConstraintType : String, CustomStringConvertible {
@@ -230,6 +163,78 @@ extension ImportSpecification {
 			}
 		} else {
 			self.constraint = .latest
+		}
+	}
+	
+}
+
+
+extension ImportSpecification.ModuleSource {
+	
+	static var hasLoggedObsoleteFormatWarning = false
+	
+	init?(_ stringToParse: String) {
+		/* Let’s try multiple formats until we find one that work. */
+		do {
+			/* We try the "@GitHubUsername" format first. */
+			let usernameRef = Reference(Substring.self)
+			let repoRef = Reference(String?.self)
+			let regex = Regex{
+				"@"
+				Capture(as: usernameRef){ #/[a-zA-Z0-9-]+/# }
+				Optionally{
+					"/"
+					Capture(as: repoRef){ #/[a-zA-Z0-9._-]+?/# }transform:{ substr in String(substr) }
+					Optionally{ ".git" }
+				}
+			}
+			if let match = try? regex.wholeMatch(in: stringToParse) {
+				self = .github(user: String(match[usernameRef]), repo: match[repoRef])
+				return
+			}
+		}
+		do {
+			/* Next we try the “scp” format.
+			 * We do a lot of assumptions for this format:
+			 *   - we assume only [a-zA-Z0-9] is valid in a username.
+			 *   - we assume only [a-zA-Z0-9.-] is valid in a domain.
+			 *   - we assume only [a-zA-Z0-9._-] is valid in a path. */
+			if (try? #/[a-zA-Z0-9]@[a-zA-Z0-9.-]:[a-zA-Z0-9._-]/#.wholeMatch(in: stringToParse)) != nil {
+				self = .scp(stringToParse)
+				return
+			}
+		}
+		do {
+			/* Next format to try is the legacy “github-username/repo-name” format.
+			 * mxcl used that format for an unknown reason, but I prefer "@github-username/repo-name". */
+			let usernameRef = Reference(Substring.self)
+			let repoRef = Reference(Substring.self)
+			let regex = Regex{
+				/* Note: Same as in first format tested. */
+				Capture(as: usernameRef){ #/[a-zA-Z0-9-]+/# }
+				"/"
+				Capture(as: repoRef){ #/[a-zA-Z0-9._-]+?/# }
+				Optionally{ ".git" }
+			}
+			if let match = try? regex.wholeMatch(in: stringToParse) {
+				if !Self.hasLoggedObsoleteFormatWarning {
+					/* TODO: Find a way to access the logger… */
+					Logger(label: "com.xcode-actions.swift-sh")
+						.notice(#"The “github-username/repo-name” format is deprecated; please use "@github-username/repo-name" instead."#)
+					Self.hasLoggedObsoleteFormatWarning = true
+				}
+				self = .github(user: String(match[usernameRef]), repo: String(match[repoRef]))
+				return
+			}
+		}
+		guard let url = URL(string: stringToParse) else {
+			return nil
+		}
+		if url.scheme != nil {
+			self = .url(url)
+		} else {
+			/* We assume a local path for everything that do not have a scheme and has not the specific formats above. */
+			self = .local(stringToParse)
 		}
 	}
 	
