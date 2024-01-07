@@ -198,8 +198,8 @@ extension ImportSpecification.ModuleSource {
 			 * We do a lot of assumptions for this format:
 			 *   - we assume only [a-zA-Z0-9] is valid in a username.
 			 *   - we assume only [a-zA-Z0-9.-] is valid in a domain.
-			 *   - we assume only [a-zA-Z0-9._-] is valid in a path. */
-			if (try? #/[a-zA-Z0-9]@[a-zA-Z0-9.-]:[a-zA-Z0-9._-]/#.wholeMatch(in: stringToParse)) != nil {
+			 *   - we assume only [a-zA-Z0-9._/-] is valid in a path. */
+			if (try? #/[a-zA-Z0-9]+@[a-zA-Z0-9.-]+:[a-zA-Z0-9._/-]+/#.wholeMatch(in: stringToParse)) != nil {
 				self = .scp(stringToParse)
 				return
 			}
@@ -210,7 +210,7 @@ extension ImportSpecification.ModuleSource {
 			let usernameRef = Reference(Substring.self)
 			let repoRef = Reference(Substring.self)
 			let regex = Regex{
-				/* Note: Same as in first format tested. */
+				/* Note: Same as in first format tested, but repoRef is not optional. */
 				Capture(as: usernameRef){ #/[a-zA-Z0-9-]+/# }
 				"/"
 				Capture(as: repoRef){ #/[a-zA-Z0-9._-]+?/# }
