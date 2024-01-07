@@ -13,6 +13,7 @@ final class GlobalOptions : ParsableArguments {
 	
 	private(set) lazy var logger: Logger = {
 		/* Bootstrap the logging system first. */
+		let resolvedLogLevel: Logger.Level = verbose ? .debug : .notice
 //		switch logHandler ?? conf?.logHandler ?? .cltLogger {
 //			case .jsonLogger:
 //				LoggingSystem.bootstrap({ label, metadataProvider in
@@ -22,16 +23,15 @@ final class GlobalOptions : ParsableArguments {
 //				}, metadataProvider: nil)
 //				
 //			case .cltLogger:
-				LoggingSystem.bootstrap({ _, metadataProvider in
+				LoggingSystem.bootstrap({ label, metadataProvider in
 					var ret = CLTLogger(multilineMode: .allMultiline, metadataProvider: metadataProvider)
 //					ret.metadata = ["zz-label": "\(label)"] /* Note: CLTLogger does not use the label by default so we add it in the metadata. */
+					ret.logLevel = resolvedLogLevel
 					return ret
-				}, metadataProvider: nil /* .init{ ["zz-date": "\(Date())"] } */ )
+				}, metadataProvider: nil/* .init{ ["zz-date": "\(Date())"] } */)
 //		}
 		/* Then create and return the logger. */
-		var logger = Logger(label: "com.xcode-actions.swift-sh")
-		logger.logLevel = verbose ? .debug : .notice
-		return logger
+		return Logger(label: "com.xcode-actions.swift-sh")
 	}()
 	
 }
