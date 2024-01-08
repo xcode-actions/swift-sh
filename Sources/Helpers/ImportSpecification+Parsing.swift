@@ -1,5 +1,10 @@
 import Foundation
 import RegexBuilder
+#if canImport(System)
+import System
+#else
+import SystemPackage
+#endif
 
 import Logging
 import UnwrapOrThrow
@@ -9,7 +14,7 @@ import Version
 
 extension ImportSpecification {
 	
-	init?(line: String) {
+	init?(line: String, fileManager fm: FileManager) {
 		/* Temporary helper structures for the parsing. */
 		struct DummyError : Error {}
 		enum ConstraintType : String, CustomStringConvertible {
@@ -33,7 +38,7 @@ extension ImportSpecification {
 		let moduleOriginRegex = Regex{
 			Capture(as: moduleOriginRef){
 				OneOrMore{ .whitespace.inverted }
-			}transform:{ substr in try ModuleSource(String(substr)) ?! DummyError() }
+			}transform:{ substr in try ModuleSource(String(substr), fileManager: fm) ?! DummyError() }
 		}
 		let constraintRegex = Regex{
 			Capture(as: constraintTypeRef){
@@ -134,7 +139,7 @@ extension ImportSpecification.ModuleSource {
 	
 	static var hasLoggedObsoleteFormatWarning = false
 	
-	init?(_ stringToParse: String) {
+	init?(_ stringToParse: String, fileManager fm: FileManager) {
 		/* Let’s try multiple formats until we find one that work. */
 		do {
 			/* We try the "@GitHubUsername" format first. */
@@ -195,7 +200,31 @@ extension ImportSpecification.ModuleSource {
 			self = .url(url)
 		} else {
 			/* We assume a local path for everything that do not have a scheme and has not the specific formats above. */
-			self = .local(stringToParse)
+			var path = stringToParse
+			let usernameRef = Reference(String?.self)
+			let regex = Regex{
+				Anchor.startOfLine
+				"~"
+				Optionally{
+					Capture(as: usernameRef){ #/[^/]+/# }transform:{ substr in String(substr) }
+				}
+			}
+			if let match = try? regex.firstMatch(in: path) {
+				let home: FilePath
+				if let username = match[usernameRef] {
+					guard let homeDir = fm.homeDirectory(forUser: username) else {
+						/* TODO: Find a way to access the logger… */
+						Logger(label: "com.xcode-actions.swift-sh")
+							.warning("Cannot get home directory for user.", metadata: ["username": "\(username)"])
+						return nil
+					}
+					home = FilePath(homeDir.path)
+				} else {
+					home = FilePath(fm.homeDirectoryForCurrentUser.path)
+				}
+				path.replaceSubrange(match.range, with: home.string)
+			}
+			self = .local(.init(path))
 		}
 	}
 	

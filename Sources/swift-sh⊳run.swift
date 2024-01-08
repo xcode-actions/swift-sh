@@ -58,7 +58,7 @@ struct Run : AsyncParsableCommand {
 			}
 			
 			logger.trace("Parsing new source line.", metadata: ["line": "\(lineStr)"])
-			guard let importSpec = ImportSpecification(line: lineStr) else {
+			guard let importSpec = ImportSpecification(line: lineStr, fileManager: fm) else {
 				if (try? #/^(\s*@testable)?\s*import(\s+(class|enum|struct))?\s+[\w_]+(\.[^\s]+)?\s+(//|/*)/#.firstMatch(in: lineStr)) != nil {
 					logger.notice("Found a line starting with import followed by a comment that failed to match an import spec.", metadata: ["line": "\(lineStr)"])
 				}
