@@ -95,6 +95,16 @@ extension ImportSpecification {
 		 * Instead we have two variables for the full “module origin and constraints” match, which we re-match later.
 		 * Indeed this is not efficient, but it is efficient _enough_. */
 		guard let match1 = try? fullRegex.firstMatch(in: line) else {
+			/* If the match failed, we check the special case of the import of SwiftSH_Helpers.
+			 * This package does not need to have an import specification: we _know_ them already.
+			 * The regex is not perfect (it’s a regex), but it’ll do for our use case. */
+			if (try? #/^(\s*@testable)?\s*import(\s+(class|enum|struct))?\s+SwiftSH_Helpers(\.[^\s]+)?/#.firstMatch(in: line)) != nil {
+				self.moduleName = "SwiftSH_Helpers"
+				self.moduleSource = .github(user: "xcode-actions", repo: "swift-sh")
+#warning("TODO: Find a way to retrieve the version of the swift-sh that is launched and use that.")
+				self.constraint = .upToNextMajor(from: Version(0, 1, 0))
+				return
+			}
 			return nil
 		}
 		/* Exactly one of the two reference must have matched. */
