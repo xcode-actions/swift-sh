@@ -18,6 +18,7 @@ struct Eject : AsyncParsableCommand {
 	
 	func run() async throws {
 		logger.error("Not implemented")
+		throw ExitCode(1)
 	}
 	
 }
