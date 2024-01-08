@@ -17,9 +17,9 @@ extension ImportSpecification {
 	func packageDependencyLine(scriptFolder: FilePath) -> String {
 		switch moduleSource {
 			case let .local(path):        return #".package(path: "\#(scriptFolder.pushing(path).string.escaped())")"#
-			case let .scp(scpDescr):      return #".package(url: "\#(scpDescr.escaped())", "#                                                   + "\(constraint.forPackageLine())"
-			case let .url(url):           return #".package(url: "\#(url.absoluteString.escaped())", "#                                         + "\(constraint.forPackageLine())"
-			case let .github(user, repo): return #".package(url: "git@github.com:\#(user.escaped())/\#((repo ?? moduleName).escaped()).git", "# + "\(constraint.forPackageLine())"
+			case let .scp(scpDescr):      return #".package(url: "\#(scpDescr.escaped())", "#                                                   + "\(constraint.forPackageLine()))"
+			case let .url(url):           return #".package(url: "\#(url.absoluteString.escaped())", "#                                         + "\(constraint.forPackageLine()))"
+			case let .github(user, repo): return #".package(url: "git@github.com:\#(user.escaped())/\#((repo ?? moduleName).escaped()).git", "# + "\(constraint.forPackageLine()))"
 		}
 	}
 	
