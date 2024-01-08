@@ -105,6 +105,11 @@ extension ImportSpecification {
 				self.constraint = .upToNextMajor(from: Version(0, 1, 0))
 				return
 			}
+			if (try? #/^(\s*@testable)?\s*import(\s+(class|enum|struct))?\s+[\w_]+(\.[^\s]+)?\s+(//|/*)/#.firstMatch(in: line)) != nil {
+				/* TODO: Find a way to access the logger… */
+				Logger(label: "com.xcode-actions.swift-sh")
+					.notice("Found a line starting with import followed by a comment that failed to match an import spec.", metadata: ["line": "\(line)"])
+			}
 			return nil
 		}
 		/* Exactly one of the two reference must have matched. */
