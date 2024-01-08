@@ -7,47 +7,29 @@ import Version
 
 
 
-public struct ImportSpecification : Equatable {
+struct ImportSpecification : Equatable {
 	
-	let moduleName: String
-	let moduleSource: ModuleSource
-	let constraint: Constraint
-	
-	enum ModuleSource : Equatable, CustomStringConvertible {
+	enum ModuleSource : Equatable {
 		
 		case url(URL)
 		case scp(String)
 		case local(String)
 		case github(user: String, repo: String?) /* If repo is nil, the module name should be used. */
 		
-		var description: String {
-			switch self {
-				case let .url(url):    return "ModuleSource.url(\(url))"
-				case let .scp(source): return "ModuleSource.scp(\(source))"
-				case let .local(path): return "ModuleSource.local(\(path))"
-				case let .github(user, repo): return "ModuleSource.github(\(user), \(repo ?? "nil"))"
-			}
-		}
-		
 	}
 	
-	enum Constraint : Equatable, CustomStringConvertible {
+	enum Constraint : Equatable {
 		
 		case upToNextMajor(from: Version)
 		case exact(Version)
 		case ref(String)
 		case latest
 		
-		var description: String {
-			switch self {
-				case let .upToNextMajor(version): return "Constraint.upToNextMajor(\(version))"
-				case let .exact(version):         return "Constraint.exact(\(version))"
-				case let .ref(ref):               return "Constraint.ref(\(ref))"
-				case     .latest:                 return "Constraint.latest"
-			}
-		}
-		
 	}
+	
+	let moduleName: String
+	let moduleSource: ModuleSource
+	let constraint: Constraint
 	
 }
 
@@ -241,6 +223,34 @@ extension ImportSpecification.ModuleSource {
 		} else {
 			/* We assume a local path for everything that do not have a scheme and has not the specific formats above. */
 			self = .local(stringToParse)
+		}
+	}
+	
+}
+
+
+extension ImportSpecification.ModuleSource : CustomStringConvertible {
+	
+	var description: String {
+		switch self {
+			case let .url(url):    return "ModuleSource.url(\(url))"
+			case let .scp(source): return "ModuleSource.scp(\(source))"
+			case let .local(path): return "ModuleSource.local(\(path))"
+			case let .github(user, repo): return "ModuleSource.github(\(user), \(repo ?? "nil"))"
+		}
+	}
+	
+}
+
+
+extension ImportSpecification.Constraint : CustomStringConvertible {
+	
+	var description: String {
+		switch self {
+			case let .upToNextMajor(version): return "Constraint.upToNextMajor(\(version))"
+			case let .exact(version):         return "Constraint.exact(\(version))"
+			case let .ref(ref):               return "Constraint.ref(\(ref))"
+			case     .latest:                 return "Constraint.latest"
 		}
 	}
 	
