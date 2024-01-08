@@ -156,7 +156,13 @@ extension ImportSpecification {
 				}
 			} else {
 				guard constraintType == .exact else {
-					/* Maybe TODO: Log warning invalid constraint type was found for a ref. */
+					/* TODO: Find a way to access the logger… */
+					Logger(label: "com.xcode-actions.swift-sh")
+						.warning("Invalid constraint found with a non-exact type but a non-compliant version.", metadata: [
+							"line": "\(line)",
+							"constraint-type": "\(constraintType)",
+							"constraint-value": "\(constraintValue)"
+						])
 					return nil
 				}
 				self.constraint = .ref(constraintValue)
