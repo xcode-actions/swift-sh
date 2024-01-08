@@ -76,6 +76,21 @@ struct Run : AsyncParsableCommand {
 		let scriptHashStr = scriptHash.reduce("", { $0 + String(format: "%02x", $1) })
 		let cacheDir = try xdgDirs.ensureCacheDirPath(FilePath("\(scriptName)-\(scriptHashStr)"))
 		
+		let platforms: String = {
+#if os(macOS)
+			let version = ProcessInfo.processInfo.operatingSystemVersion
+			if version.majorVersion <= 10 {
+				return "[.macOS(.v\(version.majorVersion)_\(version.minorVersion))]"
+			} else {
+				/* We cap at macOS 13
+				 *  which is the latest version available for Swift 5.7
+				 *  which is the version we use in our generated Package.swift file. */
+				return "[.macOS(.v\(min(13, version.majorVersion)))]"
+			}
+#else
+			return "nil"
+#endif
+		}()
 		let packageSwiftContent = #"""
 			// swift-tools-version:5.7
 			import PackageDescription
@@ -83,12 +98,8 @@ struct Run : AsyncParsableCommand {
 			
 			let package = Package(
 				name: "SwiftSH_DummyDepsPackage",
-				platforms: [
-					.macOS(.v13)
-				],
-				products: [
-					.library(name: "SwiftSH_Deps", targets: ["SwiftSH_DummyDepsLib"])
-				],
+				platforms: \#(platforms),
+				products: [.library(name: "SwiftSH_Deps", targets: ["SwiftSH_DummyDepsLib"])],
 				dependencies: [
 					\#(importSpecs.map{ $0.packageDependencyLine(scriptFolder: scriptFolder) }.joined(separator: ",\n\t\t"))
 				],
