@@ -42,6 +42,7 @@ struct Run : AsyncParsableCommand {
 		/* Let’s parse the source file.
 		 * We’re doing a very bad job at parsing, but that’s mostly on purpose. */
 		var stdinData = Data() /* We only keep the file contents when we’re reading from stdin. */
+		var importSpecs = [ImportSpecification]()
 		let streamReader = FileHandleReader(stream: fh, bufferSize: 3 * 1024, bufferSizeIncrement: 1024)
 		while let (lineData, newLineData) = try streamReader.readLine() {
 //			logger.trace("Received new source line data.", metadata: ["line-data": "\(lineData.reduce("", { $0 + String(format: "%02x", $1) }))"])
@@ -65,9 +66,11 @@ struct Run : AsyncParsableCommand {
 				continue
 			}
 			logger.debug("Found new import specification.", metadata: ["import-spec": "\(importSpec)", "line": "\(lineStr)"])
+			importSpecs.append(importSpec)
 		}
 		
 		let scriptAbsolutePath = (!isStdin ? FilePath(fm.currentDirectoryPath).pushing(scriptPath) : "")
+		let scriptFolder = (!isStdin ? scriptAbsolutePath.removingLastComponent() : FilePath(fm.currentDirectoryPath))
 		let scriptName = (!isStdin ? (scriptPath.stem ?? "unknown") : "stdin")
 		let scriptHash = (Insecure.MD5.hash(data: !isStdin ? Data(scriptAbsolutePath.string.utf8) : stdinData))
 		let scriptHashStr = scriptHash.reduce("", { $0 + String(format: "%02x", $1) })
@@ -87,29 +90,16 @@ struct Run : AsyncParsableCommand {
 					.library(name: "SwiftSH_Deps", targets: ["SwiftSH_DummyDepsLib"])
 				],
 				dependencies: [
-					.package(url: "https://github.com/apple/swift-argument-parser.git", from: "1.2.0"),
-					.package(url: "https://github.com/Frizlab/UnwrapOrThrow.git",       from: "1.0.1-rc"),
-					.package(url: "https://github.com/Frizlab/swift-xdg.git",           from: "1.0.0-beta"),
-					.package(url: "https://github.com/mxcl/LegibleError.git",           from: "1.0.0"),
-					.package(url: "https://github.com/mxcl/Version.git",                from: "2.0.0"),
-					.package(url: "https://github.com/xcode-actions/clt-logger.git",    from: "0.8.0"),
-					.package(url: "https://github.com/xcode-actions/stream-reader.git", from: "3.5.0"),
-					.package(url: "https://github.com/xcode-actions/XcodeTools.git",    revision: "0.9.1"),
+					\#(importSpecs.map{ $0.packageDependencyLine(scriptFolder: scriptFolder) }.joined(separator: ",\n\t\t"))
 				],
 				targets: [
 					.library(name: "SwiftSH_DummyDepsLib", dependencies: [
-						.product(name: "ArgumentParser", package: "swift-argument-parser"),
-						.product(name: "CLTLogger",      package: "clt-logger"),
-						.product(name: "LegibleError",   package: "LegibleError"),
-						.product(name: "StreamReader",   package: "stream-reader"),
-						.product(name: "UnwrapOrThrow",  package: "UnwrapOrThrow"),
-						.product(name: "Version",        package: "Version"),
-						.product(name: "XcodeTools",     package: "XcodeTools"),
-						.product(name: "XDG",            package: "swift-xdg"),
+						\#(importSpecs.map{ $0.targetDependencyLine() }.joined(separator: ",\n\t\t\t"))
 					], path: ".", sources: ["empty.swift"])
 				]
 			)
 			"""#
+		print(packageSwiftContent)
 	}
 	
 }

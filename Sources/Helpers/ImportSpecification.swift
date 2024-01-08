@@ -25,10 +25,10 @@ struct ImportSpecification : Equatable {
 	
 	enum Constraint : Equatable {
 		
-		case upToNextMajor(from: Version)
-		case exact(Version)
-		case ref(String)
-		case latest
+		case upToNextMajor(from: Version) /* "~>" followed by a version */
+		case exact(Version)               /* "==" followed by a version */
+		case ref(String)                  /* "==" followed by not a version */
+		case latest                       /* nothing */
 		
 	}
 	
