@@ -147,7 +147,7 @@ public class Script {
 				
 			case .path(let path):
 				guard let line = (try? StreamReader(path: manifestPath))?.pop() else { return true }
-				guard let manifestVersion = line.capture(for: "//\\sswift-tools-version:\\s*(\\d+)\\.\\d+").flatMap({ Int($0) }) else {return true}
+				guard let manifestVersion = line.capture(for: #"//\sswift-tools-version:\s*(\d+)\.\d+"#).flatMap({ Int($0) }) else {return true}
 				
 				/* If the manifest version is less than 5 the script was last built with an ABI-unsafe compiler. */
 				guard manifestVersion >= 5 else {return true}
