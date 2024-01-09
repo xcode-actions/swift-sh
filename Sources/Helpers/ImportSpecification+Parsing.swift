@@ -14,7 +14,7 @@ import Version
 
 extension ImportSpecification {
 	
-	init?(line: String, fileManager fm: FileManager) {
+	init?(line: String, fileManager fm: FileManager, logger: Logger) {
 		/* Temporary helper structures for the parsing. */
 		struct DummyError : Error {}
 		enum ConstraintType : String, CustomStringConvertible {
@@ -38,7 +38,7 @@ extension ImportSpecification {
 		let moduleOriginRegex = Regex{
 			Capture(as: moduleOriginRef){
 				OneOrMore{ .whitespace.inverted }
-			}transform:{ substr in try ModuleSource(String(substr), fileManager: fm) ?! DummyError() }
+			}transform:{ substr in try ModuleSource(String(substr), fileManager: fm, logger: logger) ?! DummyError() }
 		}
 		let constraintRegex = Regex{
 			Capture(as: constraintTypeRef){
@@ -107,9 +107,7 @@ extension ImportSpecification {
 				return
 			}
 			if (try? #/^(\s*@testable)?\s*import(\s+(class|enum|struct))?\s+[\w_]+(\.[^\s]+)?\s+(//|/*)/#.firstMatch(in: line)) != nil {
-				/* TODO: Find a way to access the logger… */
-				Logger(label: "com.xcode-actions.swift-sh")
-					.notice("Found a line starting with import followed by a comment that failed to match an import spec.", metadata: ["line": "\(line)"])
+				logger.notice("Found a line starting with import followed by a comment that failed to match an import spec.", metadata: ["line": "\(line)"])
 			}
 			return nil
 		}
@@ -132,13 +130,11 @@ extension ImportSpecification {
 				}
 			} else {
 				guard constraintType == .exact else {
-					/* TODO: Find a way to access the logger… */
-					Logger(label: "com.xcode-actions.swift-sh")
-						.warning("Invalid constraint found with a non-exact type but a non-compliant version.", metadata: [
-							"line": "\(line)",
-							"constraint-type": "\(constraintType)",
-							"constraint-value": "\(constraintValue)"
-						])
+					logger.warning("Invalid constraint found with a non-exact type but a non-compliant version.", metadata: [
+						"line": "\(line)",
+						"constraint-type": "\(constraintType)",
+						"constraint-value": "\(constraintValue)"
+					])
 					return nil
 				}
 				self.constraint = .ref(constraintValue)
@@ -155,7 +151,7 @@ extension ImportSpecification.ModuleSource {
 	
 	static var hasLoggedObsoleteFormatWarning = false
 	
-	init?(_ stringToParse: String, fileManager fm: FileManager) {
+	init?(_ stringToParse: String, fileManager fm: FileManager, logger: Logger) {
 		/* Let’s try multiple formats until we find one that work. */
 		do {
 			/* We try the "@GitHubUsername" format first. */
@@ -200,9 +196,7 @@ extension ImportSpecification.ModuleSource {
 			}
 			if let match = try? regex.wholeMatch(in: stringToParse) {
 				if !Self.hasLoggedObsoleteFormatWarning {
-					/* TODO: Find a way to access the logger… */
-					Logger(label: "com.xcode-actions.swift-sh")
-						.notice(#"The “github-username/repo-name” format is deprecated; please use "@github-username/repo-name" instead."#)
+					logger.notice(#"The “github-username/repo-name” format is deprecated; please use "@github-username/repo-name" instead."#)
 					Self.hasLoggedObsoleteFormatWarning = true
 				}
 				self = .github(user: String(match[usernameRef]), repo: String(match[repoRef]))
@@ -229,9 +223,7 @@ extension ImportSpecification.ModuleSource {
 				let home: FilePath
 				if let username = match[usernameRef] {
 					guard let homeDir = fm.homeDirectory(forUser: username) else {
-						/* TODO: Find a way to access the logger… */
-						Logger(label: "com.xcode-actions.swift-sh")
-							.warning("Cannot get home directory for user.", metadata: ["username": "\(username)"])
+						logger.warning("Cannot get home directory for user.", metadata: ["username": "\(username)"])
 						return nil
 					}
 					home = FilePath(homeDir.path)

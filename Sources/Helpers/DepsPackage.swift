@@ -43,8 +43,8 @@ struct DepsPackage {
 				continue
 			}
 			
-			logger.trace("Parsing new source line.", metadata: ["line": "\(lineStr)"])
-			guard let importSpec = ImportSpecification(line: lineStr, fileManager: fm) else {
+			logger.trace("Parsing new source line for import specification.", metadata: ["line": "\(lineStr)"])
+			guard let importSpec = ImportSpecification(line: lineStr, fileManager: fm, logger: logger) else {
 				continue
 			}
 			logger.debug("Found new import specification.", metadata: ["import-spec": "\(importSpec)", "line": "\(lineStr)"])
