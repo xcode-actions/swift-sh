@@ -178,9 +178,32 @@ struct DepsPackage {
 			 *  `Error: unexpectedSubprocessExit(terminationStatus: 1, terminationReason: __C.NSTaskTerminationReason)` in swift-sh output. */
 			ret = nil
 		}
-		guard let ret else {
+		guard var ret else {
 			struct CannotFindREPLArgs : Error {var swiftStderr: String}
 			throw CannotFindREPLArgs(swiftStderr: errorOutput.joined(separator: "\n"))
+		}
+		/* Now swift has given us the arguments it thinks are needed to start the script.
+		 * Spoiler: they are not enough!
+		 * When the deps contain an xcframework dependency, we have to add the -I option for swift to find the headers of the frameworks. */
+		let artifactsFolder = rootPath.appending(".build/artifacts")
+		if let directoryEnumerator = fm.enumerator(at: artifactsFolder.url, includingPropertiesForKeys: nil) {
+			while let url = directoryEnumerator.nextObject() as! URL? {
+				/* These rules are ad-hoc and work in the case I tested (an XcodeTools dependency).
+				 * There are probably many cases where they won’t work. */
+				let isXcframework = url.deletingLastPathComponent().deletingLastPathComponent().pathExtension == "xcframework"
+				let isMacOS = url.deletingLastPathComponent().lastPathComponent.lowercased().hasPrefix("macos-")
+				let isFramework = url.pathExtension == "framework"
+				let isHeaders = url.lastPathComponent.lowercased() == "headers"
+				if isXcframework && isMacOS {
+					if isFramework {
+						ret.append("-I\(url.absoluteURL.path)/Headers")
+						directoryEnumerator.skipDescendants()
+					} else if isHeaders {
+						ret.append("-I\(url.absoluteURL.path)")
+						directoryEnumerator.skipDescendants()
+					}
+				}
+			}
 		}
 		return ret
 	}
