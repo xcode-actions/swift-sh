@@ -129,19 +129,33 @@ struct DepsPackage {
 			try Data().write(to: emptyFilePath.url)
 		}
 		
+		var slaveRawFd: Int32 = 0
+		var masterRawFd: Int32 = 0
+		guard openpty(&masterRawFd, &slaveRawFd, nil/*name*/, nil/*termp*/, nil/*winp*/) == 0 else {
+			struct CannotOpenTTYError : Error {var errmsg: String}
+			throw CannotOpenTTYError(errmsg: Errno(rawValue: errno).localizedDescription)
+		}
+		/* Note: No defer in which we close the fds, they will be closed by ProcessInvocation. */
+		let slaveFd = FileDescriptor(rawValue: slaveRawFd)
+		let masterFd = FileDescriptor(rawValue: masterRawFd)
 		let pi = ProcessInvocation(
 			"swift", "run", "-c", "release", "--repl",
 			usePATH: true, workingDirectory: rootPath.url,
-			stdin: nil, stdoutRedirect: .capture, stderrRedirect: .capture
+			/* The environment below tricks swift somehow into allowing the REPL when stdout is not a tty.
+			 * We do one better and give it a pty directly and we know we’re good. */
+//			environment: ["PATH": "/Applications/Xcode.app/Contents/Developer/usr/bin:/usr/bin:/bin:/usr/sbin:/sbin", "NSUnbufferedIO": "YES"],
+			stdin: nil, stdoutRedirect: .toFd(slaveFd, giveOwnership: true), stderrRedirect: .capture, additionalOutputFileDescriptors: [masterFd],
+			lineSeparators: .newLine(unix: true, legacyMacOS: false, windows: true/* Because of the pty, I think. */)
 		)
 		var ret: [String]?
 		var errorOutput = [String]()
 		do {
 			for try await lineWithSource in pi {
 				switch lineWithSource.fd {
-					case .standardOutput:
+					case masterFd:
 						/* This is interesting to us.
 						 * Let’s try and detect the REPL arguments. */
+						logger.debug("swift stdout: \(lineWithSource.strLineOrHex())")
 						guard let line = try? lineWithSource.strLine() else {
 							logger.warning("Got non-utf8 line output on stdout from swift.", metadata: ["line-as-hex": "\(lineWithSource.strLineOrHex())"])
 							continue
@@ -167,6 +181,7 @@ struct DepsPackage {
 						ret = newRet
 						
 					case .standardError:
+						logger.debug("swift stderr: \(lineWithSource.strLineOrHex())")
 						errorOutput.append(lineWithSource.strLineOrHex())
 						
 					default:
