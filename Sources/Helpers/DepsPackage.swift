@@ -104,6 +104,7 @@ struct DepsPackage {
 					], path: ".", sources: ["empty.swift"])
 				]
 			)
+			
 			"""#
 		
 		/* Let’s see if we need to update/create the Package.swift file. */
