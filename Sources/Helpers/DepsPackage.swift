@@ -43,6 +43,10 @@ struct DepsPackage {
 				continue
 			}
 			
+			if (try? #/(^|\s)@main(\s|$)/#.firstMatch(in: lineStr)) != nil {
+				logger.warning(#"Possible @main detected. @main is not supported (yet?) in scripts, so you have to call the main directly. If you are using ArgumentParser’s AsyncParsableCommand, you can call the main like so: "_ = await Task{ await YourMainType.main() }.value"."#)
+			}
+			
 			logger.trace("Parsing new source line for import specification.", metadata: ["line": "\(lineStr)"])
 			guard let importSpec = ImportSpecification(line: lineStr, fileManager: fm, logger: logger) else {
 				continue
