@@ -7,6 +7,7 @@ import SystemPackage
 
 import ArgumentParser
 import Logging
+import XcodeTools
 import XDG
 
 
@@ -35,7 +36,12 @@ struct Run : AsyncParsableCommand {
 		logger.debug("Running script", metadata: ["script-path": "\(!isStdin ? scriptPath : "<stdin>")", "script-arguments": .array(scriptArguments.map{ "\($0)" })])
 		
 		let depsPackage = try DepsPackage(scriptPath: scriptPath, isStdin: isStdin, xdgDirs: xdgDirs, fileManager: fm, logger: logger)
-		print(try await depsPackage.retrieveREPLInvocation(skipPackageOnNoRemoteModules: skipPackageOnNoRemoteModules, fileManager: fm, logger: logger).joined(separator: " "))
+		let swiftArgs = try await depsPackage.retrieveREPLInvocation(skipPackageOnNoRemoteModules: skipPackageOnNoRemoteModules, fileManager: fm, logger: logger)
+#warning("TODO: stdin")
+		_ = try await ProcessInvocation(
+			"swift", args: swiftArgs + [scriptPath.string] + scriptArguments, usePATH: true,
+			stdin: .standardInput, stdoutRedirect: .none, stderrRedirect: .none
+		).invokeAndGetRawOutput()
 	}
 	
 }
