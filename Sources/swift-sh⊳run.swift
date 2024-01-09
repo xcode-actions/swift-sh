@@ -38,9 +38,11 @@ struct Run : AsyncParsableCommand {
 		let depsPackage = try DepsPackage(scriptPath: scriptPath, isStdin: isStdin, xdgDirs: xdgDirs, fileManager: fm, logger: logger)
 		let swiftArgs = try await depsPackage.retrieveREPLInvocation(skipPackageOnNoRemoteModules: skipPackageOnNoRemoteModules, fileManager: fm, logger: logger)
 #warning("TODO: stdin")
+		logger.trace("Running script.", metadata: ["invocation": .array((["swift"] + swiftArgs + [scriptPath.string] + scriptArguments).map{ "\($0)" })])
 		_ = try await ProcessInvocation(
 			"swift", args: swiftArgs + [scriptPath.string] + scriptArguments, usePATH: true,
-			stdin: .standardInput, stdoutRedirect: .none, stderrRedirect: .none
+			stdin: .standardInput, stdoutRedirect: .none, stderrRedirect: .none,
+			signalHandling: { .mapForChild(for: $0, with: [.interrupt: .terminated]/* Swift eats the interrupts for some reasons… */) }
 		).invokeAndGetRawOutput()
 	}
 	

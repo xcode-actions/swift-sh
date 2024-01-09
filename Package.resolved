@@ -176,8 +176,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/xcode-actions/XcodeTools.git",
       "state" : {
-        "branch" : "0.9.1",
-        "revision" : "2ad631ab97d3df8169ac233aef6a1f467be3782d"
+        "branch" : "0.10.0",
+        "revision" : "111af8c3b2891ee05df77dad1e7e47b305be6de7"
       }
     },
     {
