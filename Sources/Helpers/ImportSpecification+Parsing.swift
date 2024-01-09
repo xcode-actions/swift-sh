@@ -64,6 +64,7 @@ extension ImportSpecification {
 		
 		/* Finally, the full regex. */
 		let fullRegex = Regex{
+			Anchor.startOfLine
 			maybeWhitespace
 			Optionally{ "@testable"; whitespace }
 			"import"; whitespace
