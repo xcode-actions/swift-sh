@@ -18,6 +18,7 @@ struct DepsPackage {
 	
 	let rootPath: FilePath
 	let scriptFolder: FilePath
+	let stdinScriptData: Data?
 	let importSpecifications: [ImportSpecification]
 	
 	init(scriptPath: FilePath, isStdin: Bool, xdgDirs: BaseDirectories, fileManager fm: FileManager, logger: Logger) throws {
@@ -54,6 +55,7 @@ struct DepsPackage {
 			logger.debug("Found new import specification.", metadata: ["import-spec": "\(importSpec)", "line": "\(lineStr)"])
 			importSpecs.append(importSpec)
 		}
+		self.stdinScriptData = stdinData
 		self.importSpecifications = importSpecs
 		
 		let scriptAbsolutePath = (!isStdin ? FilePath(fm.currentDirectoryPath).pushing(scriptPath) : "")
