@@ -68,7 +68,7 @@ struct DepsPackage {
 		self.scriptFolder = scriptFolder
 	}
 	
-	func retrieveREPLInvocation(skipPackageOnNoRemoteModules: Bool, fileManager fm: FileManager, logger: Logger) async throws -> [String] {
+	func retrieveREPLInvocation(skipPackageOnNoRemoteModules: Bool, useSSHForGithubDependencies: Bool, fileManager fm: FileManager, logger: Logger) async throws -> [String] {
 		guard !importSpecifications.isEmpty || !skipPackageOnNoRemoteModules else {
 			return []
 		}
@@ -98,7 +98,7 @@ struct DepsPackage {
 				platforms: \#(platforms),
 				products: [.library(name: "SwiftSH_Deps", targets: ["SwiftSH_DummyDepsLib"])],
 				dependencies: [
-					\#(importSpecifications.map{ $0.packageDependencyLine(scriptFolder: scriptFolder) }.joined(separator: ",\n\t\t"))
+					\#(importSpecifications.map{ $0.packageDependencyLine(scriptFolder: scriptFolder, useSSHForGithubDependencies: useSSHForGithubDependencies) }.joined(separator: ",\n\t\t"))
 				],
 				targets: [
 					.target(name: "SwiftSH_DummyDepsLib", dependencies: [

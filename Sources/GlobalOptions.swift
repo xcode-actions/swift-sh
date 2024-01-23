@@ -8,6 +8,9 @@ import Logging
 
 final class GlobalOptions : ParsableArguments {
 	
+	@Flag(name: .long)
+	var useSSHForGithubDependencies: Bool = false
+	
 	@Flag(name: .shortAndLong)
 	var verbose: Bool = false
 	
