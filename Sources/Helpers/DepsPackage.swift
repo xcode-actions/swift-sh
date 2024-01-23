@@ -1,4 +1,4 @@
-import Crypto
+import CryptoKit
 import Foundation
 #if canImport(System)
 import System
@@ -8,8 +8,8 @@ import SystemPackage
 import RegexBuilder
 
 import Logging
+import ProcessInvocation
 import StreamReader
-import XcodeTools
 import XDG
 
 
@@ -190,7 +190,7 @@ struct DepsPackage {
 						logger.warning("Got line from unknown fd from swift.", metadata: ["fd": "\(lineWithSource.fd)", "line-or-hex": "\(lineWithSource.strLineOrHex())"])
 				}
 			}
-		} catch XcodeToolsError.unexpectedSubprocessExit {
+		} catch ProcessInvocationError.unexpectedSubprocessExit {
 			/* Even if we succeed in getting something we deliberately fail as the swift command failed.
 			 * We catch the error because we want to have something less harsh than just
 			 *  `Error: unexpectedSubprocessExit(terminationStatus: 1, terminationReason: __C.NSTaskTerminationReason)` in swift-sh output. */
