@@ -1,4 +1,3 @@
-import CryptoKit
 import Foundation
 #if canImport(System)
 import System
@@ -7,6 +6,7 @@ import SystemPackage
 #endif
 import RegexBuilder
 
+import Crypto
 import Logging
 import ProcessInvocation
 import StreamReader
