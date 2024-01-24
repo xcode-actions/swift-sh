@@ -20,6 +20,9 @@ struct Run : AsyncParsableCommand {
 	@Flag(name: .long, inversion: .prefixedNo)
 	var skipPackageOnNoRemoteModules = true
 	
+	@Flag(name: .long, inversion: .prefixedNo)
+	var disableSandboxForPackageResolution = false
+	
 	@Argument
 	var scriptPath: FilePath
 	
@@ -36,7 +39,13 @@ struct Run : AsyncParsableCommand {
 		logger.debug("Running script", metadata: ["script-path": "\(!isStdin ? scriptPath : "<stdin>")", "script-arguments": .array(scriptArguments.map{ "\($0)" })])
 		
 		let depsPackage = try DepsPackage(scriptPath: scriptPath, isStdin: isStdin, xdgDirs: xdgDirs, fileManager: fm, logger: logger)
-		let swiftArgs = try await depsPackage.retrieveREPLInvocation(skipPackageOnNoRemoteModules: skipPackageOnNoRemoteModules, useSSHForGithubDependencies: globalOptions.useSSHForGithubDependencies, fileManager: fm, logger: logger)
+		let swiftArgs = try await depsPackage.retrieveREPLInvocation(
+			skipPackageOnNoRemoteModules: skipPackageOnNoRemoteModules,
+			useSSHForGithubDependencies: globalOptions.useSSHForGithubDependencies,
+			disableSandboxForPackageResolution: disableSandboxForPackageResolution,
+			fileManager: fm,
+			logger: logger
+		)
 		
 		let stdinForSwift: FileDescriptor
 		if let data = depsPackage.stdinScriptData {

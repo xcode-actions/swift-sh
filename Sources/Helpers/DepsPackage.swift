@@ -68,7 +68,7 @@ struct DepsPackage {
 		self.scriptFolder = scriptFolder
 	}
 	
-	func retrieveREPLInvocation(skipPackageOnNoRemoteModules: Bool, useSSHForGithubDependencies: Bool, fileManager fm: FileManager, logger: Logger) async throws -> [String] {
+	func retrieveREPLInvocation(skipPackageOnNoRemoteModules: Bool, useSSHForGithubDependencies: Bool, disableSandboxForPackageResolution: Bool, fileManager fm: FileManager, logger: Logger) async throws -> [String] {
 		guard !importSpecifications.isEmpty || !skipPackageOnNoRemoteModules else {
 			return []
 		}
@@ -141,7 +141,7 @@ struct DepsPackage {
 		let slaveFd = FileDescriptor(rawValue: slaveRawFd)
 		let masterFd = FileDescriptor(rawValue: masterRawFd)
 		let pi = ProcessInvocation(
-			"swift", "run", "-c", "release", "--repl",
+			"swift", args: ["run", "-c", "release", "--repl"] + (disableSandboxForPackageResolution ? ["--disable-sandbox"] : []),
 			usePATH: true, workingDirectory: rootPath.url,
 			/* The environment below tricks swift somehow into allowing the REPL when stdout is not a tty.
 			 * We do one better and give it a pty directly and we know we’re good. */
