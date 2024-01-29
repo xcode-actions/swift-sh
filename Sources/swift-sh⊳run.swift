@@ -17,6 +17,9 @@ struct Run : AsyncParsableCommand {
 	@OptionGroup
 	var globalOptions: GlobalOptions
 	
+	@Flag(name: .customShort("c"))
+	var scriptPathIsContent = false
+	
 	@Flag(name: .long, inversion: .prefixedNo)
 	var skipPackageOnNoRemoteModules = true
 	
@@ -24,7 +27,7 @@ struct Run : AsyncParsableCommand {
 	var disableSandboxForPackageResolution = false
 	
 	@Argument
-	var scriptPath: FilePath
+	var scriptPathOrContent: String
 	
 	@Argument(parsing: .captureForPassthrough)
 	var scriptArguments: [String] = []
@@ -33,12 +36,34 @@ struct Run : AsyncParsableCommand {
 		let fm = FileManager.default
 		let xdgDirs = try BaseDirectories(prefixAll: "swift-sh")
 		
-		/* Note: Our stdin detection probably lacks a lot of edge cases but we deem it enough. */
-		/* TODO: The case of named pipes… */
-		let isStdin = (scriptPath == "-" || scriptPath == "/dev/stdin")
+		let isStdin: Bool
+		let scriptPath: String
+		if !scriptPathIsContent {
+			/* Note: Our stdin detection probably lacks a lot of edge cases but we deem it enough, at least for now. */
+			/* TODO: The case of named pipes… */
+			scriptPath = scriptPathOrContent
+			isStdin = (scriptPath == "-" || scriptPath == "/dev/stdin")
+		} else {
+			/* To do the `-c` option, we have to create a temporary file and delete it when we’re done.
+			 * This is due to swift not supporting the `-c` option, or an equivalent (AFAICT). */
+			var p: String
+			repeat {
+#if canImport(Darwin)
+				p = fm.temporaryDirectory.appending(path: "swift-sh-dash-c-content-\(UUID().uuidString).swift", directoryHint: .notDirectory).path
+#else
+				p = fm.temporaryDirectory.appendingPathComponent("swift-sh-dash-c-content-\(UUID().uuidString).swift").path
+#endif
+			} while fm.fileExists(atPath: p)
+			guard fm.createFile(atPath: p, contents: Data(scriptPathOrContent.utf8), attributes: [.posixPermissions: 0o400]) else {
+				struct CannotCreateTempFile : Error {var path: String}
+				throw CannotCreateTempFile(path: p)
+			}
+			scriptPath = p
+			isStdin = false
+		}
 		logger.debug("Running script", metadata: ["script-path": "\(!isStdin ? scriptPath : "<stdin>")", "script-arguments": .array(scriptArguments.map{ "\($0)" })])
 		
-		let depsPackage = try DepsPackage(scriptPath: scriptPath, isStdin: isStdin, xdgDirs: xdgDirs, fileManager: fm, logger: logger)
+		let depsPackage = try DepsPackage(scriptPath: FilePath(scriptPath), isStdin: isStdin, xdgDirs: xdgDirs, fileManager: fm, logger: logger)
 		let swiftArgs = try await depsPackage.retrieveREPLInvocation(
 			skipPackageOnNoRemoteModules: skipPackageOnNoRemoteModules,
 			useSSHForGithubDependencies: globalOptions.useSSHForGithubDependencies,
@@ -94,9 +119,9 @@ struct Run : AsyncParsableCommand {
 			stdinForSwift = .standardInput
 		}
 		
-		logger.trace("Running script.", metadata: ["invocation": .array((["swift"] + swiftArgs + [scriptPath.string] + scriptArguments).map{ "\($0)" })])
+		logger.trace("Running script.", metadata: ["invocation": .array((["swift"] + swiftArgs + [scriptPath] + scriptArguments).map{ "\($0)" })])
 		_ = try await ProcessInvocation(
-			"swift", args: swiftArgs + [scriptPath.string] + scriptArguments, usePATH: true,
+			"swift", args: swiftArgs + [scriptPath] + scriptArguments, usePATH: true,
 			stdin: stdinForSwift, stdoutRedirect: .none, stderrRedirect: .none,
 			signalHandling: { .mapForChild(for: $0, with: [.interrupt: .terminated]/* Swift eats the interrupts for some reasons… */) }
 		).invokeAndGetRawOutput()
