@@ -37,10 +37,12 @@ struct Run : AsyncParsableCommand {
 		let xdgDirs = try BaseDirectories(prefixAll: "swift-sh")
 		
 		let isStdin: Bool
+		let isTemporary: Bool
 		let scriptPath: String
 		if !scriptPathIsContent {
 			/* Note: Our stdin detection probably lacks a lot of edge cases but we deem it enough, at least for now. */
 			/* TODO: The case of named pipes… */
+			isTemporary = false
 			scriptPath = scriptPathOrContent
 			isStdin = (scriptPath == "-" || scriptPath == "/dev/stdin")
 		} else {
@@ -60,6 +62,15 @@ struct Run : AsyncParsableCommand {
 			}
 			scriptPath = p
 			isStdin = false
+			isTemporary = true
+		}
+		defer {
+			if isTemporary {
+				/* Note: We should probably also register a sigaction to remove the temporary file in case of a terminating signal. */
+				if (try? fm.removeItem(atPath: scriptPath)) == nil {
+					logger.warning("Failed removing temporary file.", metadata: ["path": "\(scriptPath)"])
+				}
+			}
 		}
 		logger.debug("Running script", metadata: ["script-path": "\(!isStdin ? scriptPath : "<stdin>")", "script-arguments": .array(scriptArguments.map{ "\($0)" })])
 		
