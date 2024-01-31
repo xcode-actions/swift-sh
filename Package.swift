@@ -20,7 +20,7 @@ let package = Package(
 		.package(url: "https://github.com/mxcl/Version.git",                           from: "2.0.0"),
 		.package(url: "https://github.com/xcode-actions/clt-logger.git",               from: "0.8.0"),
 		.package(url: "https://github.com/xcode-actions/stream-reader.git",            from: "3.5.0"),
-		.package(url: "https://github.com/xcode-actions/swift-process-invocation.git", from: "1.0.0-beta")]
+		.package(url: "https://github.com/xcode-actions/swift-process-invocation.git", from: "1.0.0-beta.4")]
 		return ret
 	}(),
 	targets: { let ret: [Target] = [

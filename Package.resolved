@@ -68,8 +68,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/xcode-actions/swift-process-invocation.git",
       "state" : {
-        "revision" : "a5ade8f68f57883e2cff9eeb34ebfccb73092037",
-        "version" : "1.0.0-beta.1"
+        "revision" : "e909b8024e41b55ac0fd776f2163302d3ed2df42",
+        "version" : "1.0.0-beta.4"
       }
     },
     {
