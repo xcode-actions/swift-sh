@@ -25,7 +25,7 @@ struct DepsPackage {
 		let fh: FileHandle
 		if !isStdin {fh = try FileHandle(forReadingFrom: scriptPath.url)}
 		else        {fh =     FileHandle.standardInput}
-		defer {try? fh.close()} /* Is it bad if we close stdin? I don’t think so, but maybe we should think about it… */
+		defer {try? fh.close()} /* Is it bad if we close stdin? Check this <https://stackoverflow.com/a/5925575>. */
 		
 		/* Let’s parse the source file.
 		 * We’re doing a very bad job at parsing, but that’s mostly on purpose. */
