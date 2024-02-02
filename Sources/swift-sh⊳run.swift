@@ -66,7 +66,9 @@ struct Run : AsyncParsableCommand {
 		}
 		defer {
 			if isTemporary {
-				/* Note: We should probably also register a sigaction to remove the temporary file in case of a terminating signal. */
+				/* Notes:
+				 * We should probably also register a sigaction to remove the temporary file in case of a terminating signal.
+				 * Or we could remove the file just after launching swift with it (to be tested). */
 				if (try? fm.removeItem(atPath: scriptPath)) == nil {
 					logger.warning("Failed removing temporary file.", metadata: ["path": "\(scriptPath)"])
 				}
