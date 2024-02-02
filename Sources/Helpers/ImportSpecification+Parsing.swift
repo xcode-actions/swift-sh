@@ -14,7 +14,7 @@ import Version
 
 extension ImportSpecification {
 	
-	init?(line: String, fileManager fm: FileManager, logger: Logger) {
+	init?(line: String, scriptFolder: FilePath, fileManager fm: FileManager, logger: Logger) {
 		/* Temporary helper structures for the parsing. */
 		struct DummyError : Error {}
 		enum ConstraintType : String, CustomStringConvertible {
@@ -38,7 +38,7 @@ extension ImportSpecification {
 		let moduleOriginRegex = Regex{
 			Capture(as: moduleOriginRef){
 				OneOrMore{ .whitespace.inverted }
-			}transform:{ substr in try ModuleSource(String(substr), fileManager: fm, logger: logger) ?! DummyError() }
+			}transform:{ substr in try ModuleSource(String(substr), scriptFolder: scriptFolder, fileManager: fm, logger: logger) ?! DummyError() }
 		}
 		let constraintRegex = Regex{
 			Capture(as: constraintTypeRef){
@@ -151,7 +151,7 @@ extension ImportSpecification.ModuleSource {
 	
 	static var hasLoggedObsoleteFormatWarning = false
 	
-	init?(_ stringToParse: String, fileManager fm: FileManager, logger: Logger) {
+	init?(_ stringToParse: String, scriptFolder: FilePath, fileManager fm: FileManager, logger: Logger) {
 		/* Let’s try multiple formats until we find one that work. */
 		do {
 			/* We try the "@GitHubUsername" format first. */
@@ -232,7 +232,7 @@ extension ImportSpecification.ModuleSource {
 				}
 				path.replaceSubrange(match.range, with: home.string)
 			}
-			self = .local(.init(path))
+			self = .local(.init(path), scriptFolder: scriptFolder)
 		}
 	}
 	

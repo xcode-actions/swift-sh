@@ -14,20 +14,20 @@ import Version
 
 extension ImportSpecification {
 	
-	func packageDependencyLine(scriptFolder: FilePath, useSSHForGithubDependencies: Bool) -> String {
+	func packageDependencyLine(useSSHForGithubDependencies: Bool) -> String {
 		let githubPrefix = (!useSSHForGithubDependencies ? "https://github.com/" : "git@github.com:")
 		switch moduleSource {
-			case let .local(path):        return #".package(path: "\#(scriptFolder.pushing(path).string.escaped())")"#
-			case let .scp(scpDescr):      return #".package(url: "\#(scpDescr.escaped())", "#                                                    + "\(constraint.forPackageLine()))"
-			case let .url(url):           return #".package(url: "\#(url.absoluteString.escaped())", "#                                          + "\(constraint.forPackageLine()))"
-			case let .github(user, repo): return #".package(url: "\#(githubPrefix)\#(user.escaped())/\#((repo ?? moduleName).escaped()).git", "# + "\(constraint.forPackageLine()))"
+			case let .local(path, scriptFolder): return #".package(path: "\#((scriptFolder?.pushing(path) ?? path).string.escaped())")"#
+			case let .scp(scpDescr):             return #".package(url: "\#(scpDescr.escaped())", "#                                                    + "\(constraint.forPackageLine()))"
+			case let .url(url):                  return #".package(url: "\#(url.absoluteString.escaped())", "#                                          + "\(constraint.forPackageLine()))"
+			case let .github(user, repo):        return #".package(url: "\#(githubPrefix)\#(user.escaped())/\#((repo ?? moduleName).escaped()).git", "# + "\(constraint.forPackageLine()))"
 		}
 	}
 	
 	func targetDependencyLine() -> String {
 #warning("TODO: scp case.")
 		switch moduleSource {
-			case let .local(path):     return #".product(name: "\#(moduleName.escaped())", package: "\#((path.stem?.description ?? moduleName).escaped())")"#
+			case let .local(path, _):  return #".product(name: "\#(moduleName.escaped())", package: "\#((path.stem?.description ?? moduleName).escaped())")"#
 			case let .scp(scpDescr):   return #".product(name: "\#(moduleName.escaped())", package: "\#(moduleName.escaped())")"#
 			case let .url(url):        return #".product(name: "\#(moduleName.escaped())", package: "\#(url.deletingPathExtension().lastPathComponent.escaped())")"#
 			case let .github(_, repo): return #".product(name: "\#(moduleName.escaped())", package: "\#((repo ?? moduleName).escaped())")"#

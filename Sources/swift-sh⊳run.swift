@@ -17,6 +17,9 @@ struct Run : AsyncParsableCommand {
 	@OptionGroup
 	var globalOptions: GlobalOptions
 	
+	@Flag(name: .long)
+	var useSSHForGithubDependencies: Bool = false
+	
 	@Flag(name: .customShort("c"))
 	var scriptPathIsContent = false
 	
@@ -36,64 +39,56 @@ struct Run : AsyncParsableCommand {
 		let fm = FileManager.default
 		let xdgDirs = try BaseDirectories(prefixAll: "swift-sh")
 		
-		let isStdin: Bool
-		let isTemporary: Bool
-		let scriptPath: String
-		if !scriptPathIsContent {
-			/* Note: Our stdin detection probably lacks a lot of edge cases but we deem it enough, at least for now. */
-			/* TODO: The case of named pipes… */
-			isTemporary = false
-			scriptPath = scriptPathOrContent
-			isStdin = (scriptPath == "-" || scriptPath == "/dev/stdin")
-		} else {
-			/* To do the `-c` option, we have to create a temporary file and delete it when we’re done.
-			 * This is due to swift not supporting the `-c` option, or an equivalent (AFAICT). */
-			var p: String
-			repeat {
-#if canImport(Darwin)
-				p = fm.temporaryDirectory.appending(path: "swift-sh-dash-c-content-\(UUID().uuidString).swift", directoryHint: .notDirectory).path
-#else
-				p = fm.temporaryDirectory.appendingPathComponent("swift-sh-dash-c-content-\(UUID().uuidString).swift").path
-#endif
-			} while fm.fileExists(atPath: p)
-			guard fm.createFile(atPath: p, contents: Data(scriptPathOrContent.utf8), attributes: [.posixPermissions: 0o400]) else {
-				struct CannotCreateTempFile : Error {var path: String}
-				throw CannotCreateTempFile(path: p)
-			}
-			scriptPath = p
-			isStdin = false
-			isTemporary = true
-		}
+		let scriptSource = try (
+			!scriptPathIsContent ?
+			ScriptSource(path: FilePath(scriptPathOrContent), fileManager: fm) :
+			ScriptSource(content: scriptPathOrContent, fileManager: fm, logger: logger)
+		)
 		defer {
-			if isTemporary {
+			if let scriptPath = scriptSource.scriptPath, scriptPath.isTmp {
 				/* Notes:
 				 * We should probably also register a sigaction to remove the temporary file in case of a terminating signal.
 				 * Or we could remove the file just after launching swift with it (to be tested). */
-				if (try? fm.removeItem(atPath: scriptPath)) == nil {
-					logger.warning("Failed removing temporary file.", metadata: ["path": "\(scriptPath)"])
-				}
+				let p = scriptPath.0.string
+				do    {try fm.removeItem(atPath: p)}
+				catch {logger.warning("Failed removings temporary file.", metadata: ["file-path": "\(p)", "error": "\(error)"])}
 			}
 		}
-		logger.debug("Running script", metadata: ["script-path": "\(!isStdin ? scriptPath : "<stdin>")", "script-arguments": .array(scriptArguments.map{ "\($0)" })])
+		logger.debug("Running script", metadata: ["script-name": "\(scriptSource.scriptName)", "script-path": scriptSource.scriptPath.flatMap{ ["value": "\($0.0)", "temporary": "\($0.isTmp)"] }, "script-arguments": .array(scriptArguments.map{ "\($0)" })].compactMapValues{ $0 })
 		
-		let depsPackage = try DepsPackage(scriptPath: FilePath(scriptPath), isStdin: isStdin, xdgDirs: xdgDirs, fileManager: fm, logger: logger)
-		let swiftArgs = try await depsPackage.retrieveREPLInvocation(
+		let scriptPathForSwift: String
+		var scriptData: (Data, hash: Data)?
+		if let scriptPath = scriptSource.scriptPath {
+			scriptData = nil
+			scriptPathForSwift = scriptPath.0.string
+		} else {
+			scriptData = (Data(), hash: Data())
+			scriptPathForSwift = "-"
+		}
+		
+		let depsPackage = try DepsPackage(
+			scriptSource: scriptSource, scriptData: &scriptData,
+			useSSHForGithubDependencies: useSSHForGithubDependencies,
 			skipPackageOnNoRemoteModules: skipPackageOnNoRemoteModules,
-			useSSHForGithubDependencies: globalOptions.useSSHForGithubDependencies,
-			disableSandboxForPackageResolution: disableSandboxForPackageResolution,
-			fileManager: fm,
-			logger: logger
+			fileManager: fm, logger: logger
 		)
+		let swiftArgs: [String] = if let depsPackage {
+			try await depsPackage.retrieveREPLInvocation(
+				packageFolder: xdgDirs.ensureCacheDirPath(FilePath("store").appending(depsPackage.packageHash.map{ String(format: "%02x", $0) }.joined())),
+				disableSandboxForPackageResolution: disableSandboxForPackageResolution,
+				fileManager: fm, logger: logger
+			)
+		} else {[]}
 		
 		let stdinForSwift: FileDescriptor
-		if let data = depsPackage.stdinScriptData {
+		if let data = scriptData {
 			let pipe = try ProcessInvocation.unownedPipe()
 			stdinForSwift = pipe.fdRead
-			if data.count > 0 {
+			if data.0.count > 0 {
 				let writtenRef = IntRef(value: 0)
 				let fhWrite = FileHandle(fileDescriptor: pipe.fdWrite.rawValue)
 				fhWrite.writeabilityHandler = { fh in
-					data.withUnsafeBytes{ (bytes: UnsafeRawBufferPointer) in
+					data.0.withUnsafeBytes{ (bytes: UnsafeRawBufferPointer) in
 						let writtenTotal: Int
 						let writtenBefore = writtenRef.value
 						
@@ -132,17 +127,17 @@ struct Run : AsyncParsableCommand {
 			stdinForSwift = .standardInput
 		}
 		
-		logger.trace("Running script.", metadata: ["invocation": .array((["swift"] + swiftArgs + [scriptPath] + scriptArguments).map{ "\($0)" })])
+		let allArgs = swiftArgs + [scriptPathForSwift] + scriptArguments
+		logger.trace("Running script.", metadata: ["invocation": .array((["swift"] + allArgs).map{ "\($0)" })])
 		_ = try await ProcessInvocation(
-			"swift", args: swiftArgs + [scriptPath] + scriptArguments, usePATH: true,
+			"swift", args: allArgs, usePATH: true,
 			stdin: stdinForSwift, stdoutRedirect: .none, stderrRedirect: .none,
 			signalHandling: { .mapForChild(for: $0, with: [.interrupt: .terminated]/* Swift eats the interrupts for some reasons… */) }
 		).invokeAndGetRawOutput()
 		
 		if stdinForSwift != .standardInput {
-			if (try? stdinForSwift.close()) == nil {
-				logger.warning("Failed closing read end of fd for pipe to swift.")
-			}
+			do    {try stdinForSwift.close()}
+			catch {logger.warning("Failed closing read end of fd for pipe to swift.", metadata: ["error": "\(error)"])}
 		}
 	}
 	

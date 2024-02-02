@@ -6,10 +6,10 @@ extension ImportSpecification.ModuleSource : CustomStringConvertible {
 	
 	var description: String {
 		switch self {
-			case let .url(url):    return "ModuleSource.url(\(url))"
-			case let .scp(source): return "ModuleSource.scp(\(source))"
-			case let .local(path): return "ModuleSource.local(\(path))"
-			case let .github(user, repo): return "ModuleSource.github(\(user), \(repo ?? "nil"))"
+			case let .url(url):                  return "ModuleSource.url(\(url))"
+			case let .scp(source):               return "ModuleSource.scp(\(source))"
+			case let .local(path, scriptFolder): return "ModuleSource.local(\(path), \(scriptFolder ?? "<none>")"
+			case let .github(user, repo):        return "ModuleSource.github(\(user), \(repo ?? "nil"))"
 		}
 	}
 	

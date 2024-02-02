@@ -18,7 +18,7 @@ struct ImportSpecification {
 		
 		case url(URL)
 		case scp(String)
-		case local(FilePath)
+		case local(FilePath, scriptFolder: FilePath?)
 		case github(user: String, repo: String?) /* If repo is nil, the module name should be used. */
 		
 	}
