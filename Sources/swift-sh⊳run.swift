@@ -6,6 +6,7 @@ import SystemPackage
 #endif
 
 import ArgumentParser
+import Crypto
 import Logging
 import ProcessInvocation
 import XDG
@@ -72,13 +73,36 @@ struct Run : AsyncParsableCommand {
 			skipPackageOnNoRemoteModules: skipPackageOnNoRemoteModules,
 			fileManager: fm, logger: logger
 		)
-		let swiftArgs: [String] = if let depsPackage {
-			try await depsPackage.retrieveREPLInvocation(
-				packageFolder: xdgDirs.ensureCacheDirPath(FilePath("store").appending(depsPackage.packageHash.map{ String(format: "%02x", $0) }.joined())),
+		let swiftArgs = try await {
+			guard let depsPackage else {
+				return [String]()
+			}
+			/* Retrieve the REPL invocation in package folder path.
+			 * Note: This is not protected in regard to multiple scripts trying to use the same store entry.
+			 * TODO: Make the REPL invocation retrieval concurrent-safe, or at least concurrent-protected. */
+			let packageFolderRelativePath = FilePath("store").appending(depsPackage.packageHash.reduce("", { $0 + String(format: "%02x", $1) }))
+			let packageFolderPath = try xdgDirs.ensureCacheDirPath(packageFolderRelativePath)
+			let ret = try await depsPackage.retrieveREPLInvocation(
+				packageFolder: packageFolderPath,
 				disableSandboxForPackageResolution: disableSandboxForPackageResolution,
 				fileManager: fm, logger: logger
 			)
-		} else {[]}
+			/* If retrieving the REPL invocation was successful, we mark the store entry as being used.
+			 * This is only for clients and has no use for swift-sh itself (allows light cleaning of the cache folder).
+			 * Note: We are not concurrent-safe for this either. */
+			let packageFolderAliasDiscriminator = Insecure.MD5
+				.hash(data: scriptData?.hash ?? Data(scriptPathForSwift.utf8))
+				.reduce("", { $0 + String(format: "%02x", $1) })
+			let markersFolderPath = try xdgDirs.ensureCacheDirPath(FilePath("markers"))
+			let packageFolderAliasPath = markersFolderPath.appending("\(scriptSource.scriptName)--\(packageFolderAliasDiscriminator)")
+			do {
+				try? fm.removeItem(at: packageFolderAliasPath.url)
+				try fm.createSymbolicLink(at: packageFolderAliasPath.url, withDestinationURL: FilePath("..").appending(packageFolderRelativePath.components).url)
+			} catch {
+				logger.warning("Failed to create marker link in swift-sh cache.", metadata: ["error": "\(error)", "marker-path": "\(packageFolderAliasPath.string)"])
+			}
+			return ret
+		}()
 		
 		let stdinForSwift: FileDescriptor
 		if let data = scriptData {

@@ -25,7 +25,7 @@ struct DepsPackage {
 		/* Let’s parse the source file.
 		 * We’re doing a very bad job at parsing, but that’s mostly on purpose. */
 		var importSpecs = [ImportSpecification]()
-		var hasher = (scriptData != nil ? SHA256() : nil)
+		var hasher = (scriptData != nil ? Insecure.MD5() : nil)
 		let streamReader = FileHandleReader(stream: scriptSource.dataHandle, bufferSize: 3 * 1024, bufferSizeIncrement: 1024, underlyingStreamReadSizeLimit: 1)
 		while let (lineData, eolData) = try streamReader.readLine() {
 //			logger.trace("Received new source line data.", metadata: ["line-data": "\(lineData.reduce("", { $0 + String(format: "%02x", $1) }))"])
