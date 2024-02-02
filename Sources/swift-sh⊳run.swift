@@ -153,16 +153,20 @@ struct Run : AsyncParsableCommand {
 		
 		let allArgs = swiftArgs + [scriptPathForSwift] + scriptArguments
 		logger.trace("Running script.", metadata: ["invocation": .array((["swift"] + allArgs).map{ "\($0)" })])
-		_ = try await ProcessInvocation(
+		let (exitCode, terminationReason) = try await ProcessInvocation(
 			"swift", args: allArgs, usePATH: true,
 			stdin: stdinForSwift, stdoutRedirect: .none, stderrRedirect: .none,
-			signalHandling: { .mapForChild(for: $0, with: [.interrupt: .terminated]/* Swift eats the interrupts for some reasons… */) }
-		).invokeAndGetRawOutput()
+			signalHandling: { .mapForChild(for: $0, with: [.interrupt: .terminated]/* Swift eats the interrupts for some reasons… */) },
+			expectedTerminations: .some(nil)
+		).invokeAndStreamOutput(checkValidTerminations: false/* Doesn’t matter, all terminations are valid. */, outputHandler: { _, _, _ in })
 		
 		if stdinForSwift != .standardInput {
 			do    {try stdinForSwift.close()}
 			catch {logger.warning("Failed closing read end of fd for pipe to swift.", metadata: ["error": "\(error)"])}
 		}
+		
+		/* TODO: terminationReason. */
+		throw ExitCode(exitCode)
 	}
 	
 }
