@@ -10,32 +10,27 @@ import Crypto
 import Logging
 import ProcessInvocation
 import StreamReader
-import XDG
 
 
 
 struct DepsPackage {
 	
-	let rootPath: FilePath
-	let scriptFolder: FilePath
-	let stdinScriptData: Data?
-	let importSpecifications: [ImportSpecification]
+	/* A hash that can be used to check whether two DepsPackages are the same.
+	 * This should be used to set the path in which the REPL invocation retrieval should be done from. */
+	let packageHash: Data
+	private let packageSwiftContent: Data
 	
-	init(scriptPath: FilePath, isStdin: Bool, xdgDirs: BaseDirectories, fileManager fm: FileManager, logger: Logger) throws {
-		let fh: FileHandle
-		if !isStdin {fh = try FileHandle(forReadingFrom: scriptPath.url)}
-		else        {fh =     FileHandle.standardInput}
-		defer {try? fh.close()} /* Is it bad if we close stdin? I don’t think so, but maybe we should think about it… */
-		
+	/* Returns nil if no package is needed (skipPackageOnNoRemoteModules && no remote package). */
+	init?(scriptSource: ScriptSource, scriptData: inout (Data, hash: Data)?, useSSHForGithubDependencies: Bool, skipPackageOnNoRemoteModules: Bool, fileManager fm: FileManager, logger: Logger) throws {
 		/* Let’s parse the source file.
 		 * We’re doing a very bad job at parsing, but that’s mostly on purpose. */
 		var importSpecs = [ImportSpecification]()
-		var stdinData: Data? = (isStdin ? Data() : nil) /* We only keep the file contents when we’re reading from stdin. */
-		let streamReader = FileHandleReader(stream: fh, bufferSize: 3 * 1024, bufferSizeIncrement: 1024)
-		while let (lineData, newLineData) = try streamReader.readLine() {
+		var hasher = (scriptData != nil ? Insecure.MD5() : nil)
+		let streamReader = FileHandleReader(stream: scriptSource.dataHandle, bufferSize: 3 * 1024, bufferSizeIncrement: 1024, underlyingStreamReadSizeLimit: 1)
+		while let (lineData, eolData) = try streamReader.readLine() {
 //			logger.trace("Received new source line data.", metadata: ["line-data": "\(lineData.reduce("", { $0 + String(format: "%02x", $1) }))"])
-			stdinData?.append(lineData)
-			stdinData?.append(newLineData)
+			scriptData?.0.append(lineData); hasher?.update(data: lineData)
+			scriptData?.0.append(eolData);  hasher?.update(data: eolData)
 			
 			guard let lineStr = String(data: lineData, encoding: .utf8) else {
 				/* We ignore non-UTF8 lines.
@@ -45,92 +40,55 @@ struct DepsPackage {
 			}
 			
 			if (try? #/(^|\s)@main(\s|$)/#.firstMatch(in: lineStr)) != nil {
-				logger.warning(#"Possible @main detected. @main is not supported (yet?) in scripts, so you have to call the main directly. If you are using ArgumentParser’s AsyncParsableCommand, you can call the main like so: "_ = await Task{ await YourMainType.main() }.value"."#)
+				logger.warning("""
+					Possible @main detected.
+					@main is not supported (yet?) in scripts, so you have to call the main directly.
+					If you are using ArgumentParser’s AsyncParsableCommand, you can call the main like so:
+					   _ = await Task{ await YourMainType.main() }.value
+					""")
 			}
 			
 			logger.trace("Parsing new source line for import specification.", metadata: ["line": "\(lineStr)"])
-			guard let importSpec = ImportSpecification(line: lineStr, fileManager: fm, logger: logger) else {
+			guard let importSpec = ImportSpecification(line: lineStr, scriptFolder: scriptSource.scriptFolder, fileManager: fm, logger: logger) else {
 				continue
 			}
 			logger.debug("Found new import specification.", metadata: ["import-spec": "\(importSpec)", "line": "\(lineStr)"])
 			importSpecs.append(importSpec)
 		}
-		self.stdinScriptData = stdinData
-		self.importSpecifications = importSpecs
+		hasher.flatMap{ scriptData?.hash = Data($0.finalize()) }
 		
-		let scriptAbsolutePath = (!isStdin ? FilePath(fm.currentDirectoryPath).pushing(scriptPath) : "")
-		let scriptFolder = (!isStdin ? scriptAbsolutePath.removingLastComponent() : FilePath(fm.currentDirectoryPath))
-		let scriptName = (!isStdin ? (scriptPath.stem ?? "unknown") : "stdin")
-		let scriptHash = (Insecure.MD5.hash(data: stdinData ?? Data(scriptAbsolutePath.string.utf8)))
-		let scriptHashStr = scriptHash.reduce("", { $0 + String(format: "%02x", $1) })
-		/* TODO: Technically the line below is a side-effect and should be avoided at all cost in an init method… */
-		self.rootPath = try xdgDirs.ensureCacheDirPath(FilePath("\(scriptName)-\(scriptHashStr)"))
-		self.scriptFolder = scriptFolder
-	}
-	
-	func retrieveREPLInvocation(skipPackageOnNoRemoteModules: Bool, useSSHForGithubDependencies: Bool, disableSandboxForPackageResolution: Bool, fileManager fm: FileManager, logger: Logger) async throws -> [String] {
-		guard !importSpecifications.isEmpty || !skipPackageOnNoRemoteModules else {
-			return []
+		guard !importSpecs.isEmpty || !skipPackageOnNoRemoteModules else {
+			return nil
 		}
 		
-		let platforms: String = {
-#if os(macOS)
-			let version = ProcessInfo.processInfo.operatingSystemVersion
-			if version.majorVersion <= 10 {
-				return "[.macOS(.v\(version.majorVersion)_\(version.minorVersion))]"
-			} else {
-				/* We cap at macOS 13
-				 *  which is the latest version available for Swift 5.7
-				 *  which is the version we use in our generated Package.swift file. */
-				return "[.macOS(.v\(min(13, version.majorVersion)))]"
-			}
-#else
-			return "nil"
-#endif
-		}()
-		let packageSwiftContent = #"""
-			// swift-tools-version:5.7
-			import PackageDescription
-			
-			
-			let package = Package(
-				name: "SwiftSH_DummyDepsPackage",
-				platforms: \#(platforms),
-				products: [.library(name: "SwiftSH_Deps", targets: ["SwiftSH_DummyDepsLib"])],
-				dependencies: [
-					\#(importSpecifications.map{ $0.packageDependencyLine(scriptFolder: scriptFolder, useSSHForGithubDependencies: useSSHForGithubDependencies) }.joined(separator: ",\n\t\t"))
-				],
-				targets: [
-					.target(name: "SwiftSH_DummyDepsLib", dependencies: [
-						\#(importSpecifications.map{ $0.targetDependencyLine() }.joined(separator: ",\n\t\t\t"))
-					], path: ".", sources: ["empty.swift"])
-				]
-			)
-			
-			"""#
-		
+		self.packageSwiftContent = Self.packageSwiftContentWith(importSpecifications: importSpecs, useSSHForGithubDependencies: useSSHForGithubDependencies)
+		self.packageHash = Data(SHA256.hash(data: packageSwiftContent))
+	}
+	
+	func retrieveREPLInvocation(packageFolder: FilePath, disableSandboxForPackageResolution: Bool, fileManager fm: FileManager, logger: Logger) async throws -> [String] {
 		/* Let’s see if we need to update/create the Package.swift file. */
-		let packageSwiftPath = rootPath.appending("Package.swift")
+		let packageSwiftPath = packageFolder.appending("Package.swift")
 		let packageSwiftURL = packageSwiftPath.url
-		let emptyFilePath = rootPath.appending("empty.swift")
+		let emptyFilePath = packageFolder.appending("empty.swift")
 		let needsPackageUpdate = try !fm.fileExists(atPath: packageSwiftPath.string) || {
 			/* The file exists. Do we need to update it? */
-			let contents = try Data(contentsOf: packageSwiftURL)
-			if contents != Data(packageSwiftContent.utf8) {
+			if try Data(contentsOf: packageSwiftURL) != packageSwiftContent {
 				return true
 			}
 			/* If the content is the same, we may want to update the file anyway if it was modified more than some time ago.
-			 * We do this to force SPM to update the package if needed (not sure if works though). */
+			 * We do this to force SPM to update the package if needed (not sure it works though). */
 			let properties = try packageSwiftURL.resourceValues(forKeys: [.contentModificationDateKey])
-			return (properties.contentModificationDate ?? .distantPast).timeIntervalSinceNow < -3*60*60
+			return (properties.contentModificationDate ?? .distantPast).timeIntervalSinceNow < -7*24*60*60/* 7 days */
 		}()
 		if needsPackageUpdate {
-			try packageSwiftContent.write(to: packageSwiftURL, atomically: false, encoding: .utf8)
+			try packageSwiftContent.write(to: packageSwiftURL)
 		}
 		if !fm.fileExists(atPath: emptyFilePath.string) {
 			try Data().write(to: emptyFilePath.url)
 		}
 		
+		/* Note: openpty is more or less deprecated and we should use the more complex but POSIX compliant to open the PTY.
+		 * See relevant test in swift-process-invocation for more info. */
 		var slaveRawFd: Int32 = 0
 		var masterRawFd: Int32 = 0
 		guard openpty(&masterRawFd, &slaveRawFd, nil/*name*/, nil/*termp*/, nil/*winp*/) == 0 else {
@@ -142,7 +100,7 @@ struct DepsPackage {
 		let masterFd = FileDescriptor(rawValue: masterRawFd)
 		let pi = ProcessInvocation(
 			"swift", args: ["run", "-c", "release", "--repl"] + (disableSandboxForPackageResolution ? ["--disable-sandbox"] : []),
-			usePATH: true, workingDirectory: rootPath.url,
+			usePATH: true, workingDirectory: packageFolder.url,
 			/* The environment below tricks swift somehow into allowing the REPL when stdout is not a tty.
 			 * We do one better and give it a pty directly and we know we’re good. */
 //			environment: ["PATH": "/Applications/Xcode.app/Contents/Developer/usr/bin:/usr/bin:/bin:/usr/sbin:/sbin", "NSUnbufferedIO": "YES"],
@@ -203,7 +161,7 @@ struct DepsPackage {
 		/* Now swift has given us the arguments it thinks are needed to start the script.
 		 * Spoiler: they are not enough!
 		 * When the deps contain an xcframework dependency, we have to add the -I option for swift to find the headers of the frameworks. */
-		let artifactsFolder = rootPath.appending(".build/artifacts")
+		let artifactsFolder = packageFolder.appending(".build/artifacts")
 		if let directoryEnumerator = fm.enumerator(at: artifactsFolder.url, includingPropertiesForKeys: nil) {
 			while let url = directoryEnumerator.nextObject() as! URL? {
 				/* These rules are ad-hoc and work in the case I tested (an XcodeTools dependency).
@@ -224,6 +182,44 @@ struct DepsPackage {
 			}
 		}
 		return ret
+	}
+	
+	private static func packageSwiftContentWith(importSpecifications: [ImportSpecification], useSSHForGithubDependencies: Bool) -> Data {
+		let platforms: String = {
+#if os(macOS)
+			let version = ProcessInfo.processInfo.operatingSystemVersion
+			if version.majorVersion <= 10 {
+				return "[.macOS(.v\(version.majorVersion)_\(version.minorVersion))]"
+			} else {
+				/* We cap at macOS 13
+				 *  which is the latest version available for Swift 5.7
+				 *  which is the version we use in our generated Package.swift file. */
+				return "[.macOS(.v\(min(13, version.majorVersion)))]"
+			}
+#else
+			return "nil"
+#endif
+		}()
+		return Data(#"""
+			// swift-tools-version:5.7
+			import PackageDescription
+			
+			
+			let package = Package(
+				name: "SwiftSH_DummyDepsPackage",
+				platforms: \#(platforms),
+				products: [.library(name: "SwiftSH_Deps", targets: ["SwiftSH_DummyDepsLib"])],
+				dependencies: [
+					\#(importSpecifications.map{ $0.packageDependencyLine(useSSHForGithubDependencies: useSSHForGithubDependencies) }.joined(separator: ",\n\t\t"))
+				],
+				targets: [
+					.target(name: "SwiftSH_DummyDepsLib", dependencies: [
+						\#(importSpecifications.map{ $0.targetDependencyLine() }.joined(separator: ",\n\t\t\t"))
+					], path: ".", sources: ["empty.swift"])
+				]
+			)
+			
+			"""#.utf8)
 	}
 	
 }

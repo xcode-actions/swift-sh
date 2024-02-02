@@ -2,6 +2,9 @@
 import PackageDescription
 
 
+let          noSwiftSettings: [SwiftSetting] = []
+let concurrencySwiftSettings: [SwiftSetting] = [.unsafeFlags(["-Xfrontend", "-warn-concurrency", "-Xfrontend", "-enable-actor-data-race-checks"])]
+
 let package = Package(
 	name: "swift-sh",
 	platforms: [
@@ -34,10 +37,10 @@ let package = Package(
 			.product(name: "UnwrapOrThrow",     package: "UnwrapOrThrow"),
 			.product(name: "Version",           package: "Version"),
 			.product(name: "XDG",               package: "swift-xdg"),
-		], path: "Sources", exclude: ["Legacy"]),
+		], path: "Sources", exclude: ["Legacy"], swiftSettings: noSwiftSettings),
 		.testTarget(name: "swift-shTests", dependencies: [
 			.target(name: "swift-sh")
-		], path: "Tests", exclude: ["Legacy"])]
+		], path: "Tests", exclude: ["Legacy"], swiftSettings: noSwiftSettings)]
 		return ret
 	}()
 )
