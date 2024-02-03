@@ -99,7 +99,7 @@ extension ImportSpecification {
 			/* If the match failed, we check the special case of the import of SwiftSH_Helpers.
 			 * This package does not need to have an import specification: we _know_ them already.
 			 * The regex is not perfect (it’s a regex), but it’ll do for our use case. */
-			if (try? #/^(\s*@testable)?\s*import(\s+(class|enum|struct))?\s+SwiftSH_Helpers(\.[^\s]+)?/#.firstMatch(in: line)) != nil {
+			if (try? #/(^|;)(\s*@testable)?\s*import(\s+(class|enum|struct))?\s+SwiftSH_Helpers(\.[^\s]+)?/#.firstMatch(in: line)) != nil {
 				self.moduleName = "SwiftSH_Helpers"
 				self.moduleSource = .github(user: "xcode-actions", repo: "swift-sh")
 				/* The Version init should never fail but we fallback to .latest if it were to fail… */
