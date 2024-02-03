@@ -32,8 +32,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/xcode-actions/stream-reader.git",
       "state" : {
-        "revision" : "1c6d95bf4b7e70f0658b0f36014c22df646a22d8",
-        "version" : "3.5.1"
+        "revision" : "13c99289668e1dedfcf28c05867cb8fe0860b133",
+        "version" : "3.5.2"
       }
     },
     {
