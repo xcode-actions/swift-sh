@@ -38,7 +38,14 @@ let package = Package(
 			.product(name: "UnwrapOrThrow",     package: "UnwrapOrThrow"),
 			.product(name: "Version",           package: "Version"),
 			.product(name: "XDG",               package: "swift-xdg"),
-		], path: "Sources", exclude: ["Legacy"], swiftSettings: noSwiftSettings),
+		], exclude: ["Legacy"], swiftSettings: noSwiftSettings),
+		.target(name: "SwiftSH_Helpers", dependencies: [
+			.product(name: "ArgumentParser",    package: "swift-argument-parser"),
+			.product(name: "CLTLogger",         package: "clt-logger"),
+			.product(name: "ProcessInvocation", package: "swift-process-invocation"),
+			.product(name: "StreamReader",      package: "stream-reader"),
+			.product(name: "XDG",               package: "swift-xdg"),
+		], swiftSettings: noSwiftSettings),
 		.testTarget(name: "swift-shTests", dependencies: [
 			.target(name: "swift-sh")
 		], path: "Tests", exclude: ["Legacy"], swiftSettings: noSwiftSettings)]
