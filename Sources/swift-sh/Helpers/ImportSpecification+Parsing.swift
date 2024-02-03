@@ -103,7 +103,7 @@ extension ImportSpecification {
 				self.moduleName = "SwiftSH_Helpers"
 				self.moduleSource = .github(user: "xcode-actions", repo: "swift-sh")
 				/* The Version init should never fail but we fallback to .latest if it were to fail… */
-				self.constraint = Version(SwiftSH.configuration.version).flatMap{ .upToNextMajor(from: $0) } ?? .latest
+				self.constraint = Version(SwiftSH.configuration.version).flatMap{ .exact($0) } ?? .latest
 				return
 			}
 			if (try? #/^(\s*@testable)?\s*import(\s+(class|enum|struct))?\s+[\w_]+(\.[^\s]+)?\s+(//|/*)/#.firstMatch(in: line)) != nil {
