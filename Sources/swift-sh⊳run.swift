@@ -165,7 +165,9 @@ struct Run : AsyncParsableCommand {
 			catch {logger.warning("Failed closing read end of fd for pipe to swift.", metadata: ["error": "\(error)"])}
 		}
 		
-		/* TODO: terminationReason. */
+		if terminationReason == .uncaughtSignal {
+			logger.info("Script received uncaught signal.")
+		}
 		throw ExitCode(exitCode)
 	}
 	
