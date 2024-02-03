@@ -102,8 +102,8 @@ extension ImportSpecification {
 			if (try? #/^(\s*@testable)?\s*import(\s+(class|enum|struct))?\s+SwiftSH_Helpers(\.[^\s]+)?/#.firstMatch(in: line)) != nil {
 				self.moduleName = "SwiftSH_Helpers"
 				self.moduleSource = .github(user: "xcode-actions", repo: "swift-sh")
-#warning("TODO: Find a way to retrieve the version of the swift-sh that is launched and use that.")
-				self.constraint = .upToNextMajor(from: Version(0, 1, 0))
+				/* The Version init should never fail but we fallback to .latest if it were to fail… */
+				self.constraint = Version(SwiftSH.configuration.version).flatMap{ .upToNextMajor(from: $0) } ?? .latest
 				return
 			}
 			if (try? #/^(\s*@testable)?\s*import(\s+(class|enum|struct))?\s+[\w_]+(\.[^\s]+)?\s+(//|/*)/#.firstMatch(in: line)) != nil {
