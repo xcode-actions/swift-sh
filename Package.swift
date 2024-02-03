@@ -11,11 +11,11 @@ let package = Package(
 	platforms: [
 		.macOS(.v13)
 	],
-	products: { let ret: [Product] = [
-		.executable(name: "swift-sh", targets: ["swift-sh"])]
-		return ret
-	}(),
-	dependencies: { let ret: [Package.Dependency] = [
+	products: [
+		.executable(name: "swift-sh",        targets: ["swift-sh"]),
+		.library   (name: "SwiftSH_Helpers", targets: ["SwiftSH_Helpers"]),
+	],
+	dependencies: [
 		.package(url: "https://github.com/apple/swift-crypto.git",                     "1.0.0" ..< "4.0.0"),
 		.package(url: "https://github.com/apple/swift-argument-parser.git",            from: "1.2.0"),
 		.package(url: "https://github.com/Frizlab/UnwrapOrThrow.git",                  from: "1.0.1"),
@@ -24,10 +24,9 @@ let package = Package(
 		.package(url: "https://github.com/mxcl/Version.git",                           from: "2.0.0"),
 		.package(url: "https://github.com/xcode-actions/clt-logger.git",               from: "0.8.0"),
 		.package(url: "https://github.com/xcode-actions/stream-reader.git",            from: "3.5.0"),
-		.package(url: "https://github.com/xcode-actions/swift-process-invocation.git", from: "1.0.0")]
-		return ret
-	}(),
-	targets: { let ret: [Target] = [
+		.package(url: "https://github.com/xcode-actions/swift-process-invocation.git", from: "1.0.0"),
+	],
+	targets: [
 		.executableTarget(name: "swift-sh", dependencies: [
 			.product(name: "ArgumentParser",    package: "swift-argument-parser"),
 			.product(name: "CLTLogger",         package: "clt-logger"),
@@ -48,7 +47,6 @@ let package = Package(
 		], swiftSettings: noSwiftSettings),
 		.testTarget(name: "swift-shTests", dependencies: [
 			.target(name: "swift-sh")
-		], path: "Tests", exclude: ["Legacy"], swiftSettings: noSwiftSettings)]
-		return ret
-	}()
+		], path: "Tests", exclude: ["Legacy"], swiftSettings: noSwiftSettings),
+	]
 )
