@@ -25,10 +25,9 @@ extension ImportSpecification {
 	}
 	
 	func targetDependencyLine() -> String {
-#warning("TODO: scp case.")
 		switch moduleSource {
-			case let .local(path, _):  return #".product(name: "\#(moduleName.escaped())", package: "\#((path.stem?.description ?? moduleName).escaped())")"#
-			case let .scp(scpDescr):   return #".product(name: "\#(moduleName.escaped())", package: "\#(moduleName.escaped())")"#
+			case let .local(path, _):  return #".product(name: "\#(moduleName.escaped())", package: "\#((path.stem ?? moduleName).escaped())")"#
+			case let .scp(scpDescr):   return #".product(name: "\#(moduleName.escaped())", package: "\#(FilePath(scpDescr).stem ?? moduleName.escaped())")"#
 			case let .url(url):        return #".product(name: "\#(moduleName.escaped())", package: "\#(url.deletingPathExtension().lastPathComponent.escaped())")"#
 			case let .github(_, repo): return #".product(name: "\#(moduleName.escaped())", package: "\#((repo ?? moduleName).escaped())")"#
 		}
