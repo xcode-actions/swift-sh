@@ -10,7 +10,7 @@ struct SwiftSH : AsyncParsableCommand {
 	
 	static let configuration: CommandConfiguration = .init(
 		commandName: "swift sh",
-		version: "1.0", /* TODO: Find a way to automatically update this when creating new versions… */
+		version: "1.0.0", /* TODO: Find a way to automatically update this when creating new versions… */
 		subcommands: [
 			Eject.self,
 			Run.self
