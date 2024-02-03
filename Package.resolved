@@ -68,8 +68,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/xcode-actions/swift-process-invocation.git",
       "state" : {
-        "revision" : "e909b8024e41b55ac0fd776f2163302d3ed2df42",
-        "version" : "1.0.0-beta.4"
+        "revision" : "5b74d422f99ad2bc6a16e075d1653712a59dfd6e",
+        "version" : "1.0.0"
       }
     },
     {
@@ -77,8 +77,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/xcode-actions/swift-signal-handling.git",
       "state" : {
-        "revision" : "1ab6d3d6f703b5215ac85612401d1d828b5eab24",
-        "version" : "1.1.0"
+        "revision" : "3f28ea749033705c38e75eb7c3d7e52b723e8252",
+        "version" : "1.1.1"
       }
     },
     {
@@ -87,7 +87,7 @@
       "location" : "https://github.com/Frizlab/swift-xdg.git",
       "state" : {
         "revision" : "d6183353dacd2747fb0ed71e2d49c09676987b98",
-        "version" : "1.0.0-beta.1.0.2"
+        "version" : "1.0.0"
       }
     },
     {
@@ -96,7 +96,7 @@
       "location" : "https://github.com/Frizlab/UnwrapOrThrow.git",
       "state" : {
         "revision" : "085ea7b599b0db956541b7189a57b0c98f15337f",
-        "version" : "1.0.1-rc.1"
+        "version" : "1.0.1"
       }
     },
     {

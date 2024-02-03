@@ -2,8 +2,9 @@
 import PackageDescription
 
 
+/* ⚠️ Do not use the concurrency check flags in a release! */
 let          noSwiftSettings: [SwiftSetting] = []
-let concurrencySwiftSettings: [SwiftSetting] = [.unsafeFlags(["-Xfrontend", "-warn-concurrency", "-Xfrontend", "-enable-actor-data-race-checks"])]
+//let concurrencySwiftSettings: [SwiftSetting] = [.unsafeFlags(["-Xfrontend", "-warn-concurrency", "-Xfrontend", "-enable-actor-data-race-checks"])]
 
 let package = Package(
 	name: "swift-sh",
@@ -17,13 +18,13 @@ let package = Package(
 	dependencies: { let ret: [Package.Dependency] = [
 		.package(url: "https://github.com/apple/swift-crypto.git",                     "1.0.0" ..< "4.0.0"),
 		.package(url: "https://github.com/apple/swift-argument-parser.git",            from: "1.2.0"),
-		.package(url: "https://github.com/Frizlab/UnwrapOrThrow.git",                  from: "1.0.1-rc"),
-		.package(url: "https://github.com/Frizlab/swift-xdg.git",                      from: "1.0.0-beta"),
+		.package(url: "https://github.com/Frizlab/UnwrapOrThrow.git",                  from: "1.0.1"),
+		.package(url: "https://github.com/Frizlab/swift-xdg.git",                      from: "1.0.0"),
 		.package(url: "https://github.com/mxcl/LegibleError.git",                      from: "1.0.0"),
 		.package(url: "https://github.com/mxcl/Version.git",                           from: "2.0.0"),
 		.package(url: "https://github.com/xcode-actions/clt-logger.git",               from: "0.8.0"),
 		.package(url: "https://github.com/xcode-actions/stream-reader.git",            from: "3.5.0"),
-		.package(url: "https://github.com/xcode-actions/swift-process-invocation.git", from: "1.0.0-beta.4")]
+		.package(url: "https://github.com/xcode-actions/swift-process-invocation.git", from: "1.0.0")]
 		return ret
 	}(),
 	targets: { let ret: [Target] = [
