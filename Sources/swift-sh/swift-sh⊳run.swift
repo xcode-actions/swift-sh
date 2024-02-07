@@ -30,6 +30,9 @@ struct Run : AsyncParsableCommand {
 	@Flag(name: .long, inversion: .prefixedNo)
 	var disableSandboxForPackageResolution = false
 	
+	@Option(name: .long)
+	var swiftPath: FilePath = "swift"
+	
 	@Argument
 	var scriptPathOrContent: String
 	
@@ -154,7 +157,7 @@ struct Run : AsyncParsableCommand {
 		let allArgs = swiftArgs + [scriptPathForSwift] + scriptArguments
 		logger.trace("Running script.", metadata: ["invocation": .array((["swift"] + allArgs).map{ "\($0)" })])
 		let (exitCode, terminationReason) = try await ProcessInvocation(
-			"swift", args: allArgs, usePATH: true,
+			swiftPath, args: allArgs, usePATH: true,
 			stdin: stdinForSwift, stdoutRedirect: .none, stderrRedirect: .none,
 			signalHandling: { .mapForChild(for: $0, with: [.interrupt: .terminated]/* Swift eats the interrupts for some reasons… */) },
 			expectedTerminations: .some(nil)
