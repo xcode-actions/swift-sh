@@ -1,6 +1,5 @@
 import Foundation
 import Logging
-import RegexBuilder
 #if canImport(System)
 import System
 #else
