@@ -100,7 +100,8 @@ struct Run : AsyncParsableCommand {
 			let packageFolderAliasPath = markersFolderPath.appending("\(scriptSource.scriptName)--\(packageFolderAliasDiscriminator)")
 			do {
 				try? fm.removeItem(at: packageFolderAliasPath.url)
-				try fm.createSymbolicLink(at: packageFolderAliasPath.url, withDestinationURL: FilePath("..").appending(packageFolderRelativePath.components).url)
+				/* Do not use the URL variant of this method as it is not possible (AFAICT) to create a relative link with it. */
+				try fm.createSymbolicLink(atPath: packageFolderAliasPath.string, withDestinationPath: FilePath("..").appending(packageFolderRelativePath.components).string)
 			} catch {
 				logger.warning("Failed to create marker link in swift-sh cache.", metadata: ["error": "\(error)", "marker-path": "\(packageFolderAliasPath.string)"])
 			}
