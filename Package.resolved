@@ -12,10 +12,10 @@
     {
       "identity" : "extenderz",
       "kind" : "remoteSourceControl",
-      "location" : "https://github.com/xcode-actions/eXtenderZ.git",
+      "location" : "https://github.com/Frizlab/eXtenderZ.git",
       "state" : {
-        "revision" : "c59e94553295a7e8a0c3ce1465a2bed073cb6ca9",
-        "version" : "1.0.7"
+        "revision" : "6df281911c5bb6095a7988e3b60986ef91536ec3",
+        "version" : "2.0.0"
       }
     },
     {
@@ -68,8 +68,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/xcode-actions/swift-process-invocation.git",
       "state" : {
-        "revision" : "5b74d422f99ad2bc6a16e075d1653712a59dfd6e",
-        "version" : "1.0.0"
+        "revision" : "995fc747c53e4dfaa7335a47511897c810ef2a01",
+        "version" : "1.1.0-beta.2"
       }
     },
     {
