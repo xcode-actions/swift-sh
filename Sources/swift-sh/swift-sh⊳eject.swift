@@ -13,8 +13,8 @@ struct Eject : AsyncParsableCommand {
 	@Flag(name: .shortAndLong)
 	var force: Bool = false
 	
-	@Argument
-	var scriptPath: String
+	@OptionGroup
+	var scriptOptions: ScriptOptions
 	
 	func run() async throws {
 		logger.error("Not implemented")
