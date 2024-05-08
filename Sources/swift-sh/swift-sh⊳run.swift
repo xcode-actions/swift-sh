@@ -23,7 +23,8 @@ struct Run : AsyncParsableCommand {
 	var scriptArguments: [String] = []
 	
 	func run() async throws {
-		let (args, stdinData) = try await runOptions.prepareRun(logger: logger)
+		let (args, stdinData, cleanup) = try await runOptions.prepareRun(logger: logger)
+		defer {cleanup()}
 		
 		let allArgs = args + scriptArguments
 		logger.trace("Running script.", metadata: ["invocation": .array((["swift"] + allArgs).map{ "\($0)" })])

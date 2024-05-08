@@ -27,7 +27,7 @@ final class BuildAndRunOptions : ParsableArguments {
 	var scriptOptions: ScriptOptions
 	
 	/* Returns the arguments that should be given to swift to run the script. */
-	func prepareRun(logger: Logger) async throws -> (swiftArgs: [String], swiftStdin: Data?) {
+	func prepareRun(forceCopySource: Bool = false, logger: Logger) async throws -> (swiftArgs: [String], swiftStdin: Data?, cleanup: () -> Void) {
 		let fm = FileManager.default
 		let xdgDirs = try BaseDirectories(prefixAll: "swift-sh")
 		
@@ -36,7 +36,7 @@ final class BuildAndRunOptions : ParsableArguments {
 				ScriptSource(path: FilePath(scriptPathOrContent), fileManager: fm) :
 				ScriptSource(content: scriptPathOrContent, fileManager: fm, logger: logger)
 		)
-		defer {
+		let cleanup = {
 			if let scriptPath = scriptSource.scriptPath, scriptPath.isTmp {
 				/* Notes:
 				 * We should probably also register a sigaction to remove the temporary file in case of a terminating signal.
@@ -95,7 +95,7 @@ final class BuildAndRunOptions : ParsableArguments {
 			return ret
 		}()
 		
-		return (swiftArgs + [scriptPathForSwift], scriptData?.0)
+		return (swiftArgs + [scriptPathForSwift], scriptData?.0, cleanup)
 	}
 	
 }
