@@ -34,7 +34,11 @@ final class BuildAndRunOptions : ParsableArguments {
 		
 		let scriptSource = try (
 			!scriptPathIsContent ?
-				ScriptSource(copying: FilePath(scriptPathOrContent), fileManager: fm) :
+				(
+					forceCopySource ?
+						ScriptSource(copying: FilePath(scriptPathOrContent), fileManager: fm) :
+						ScriptSource(path:    FilePath(scriptPathOrContent), fileManager: fm)
+				) :
 				ScriptSource(content: scriptPathOrContent, fileManager: fm, logger: logger)
 		)
 		let scriptPath = try scriptSource.scriptPath?.0 ?! InternalError(message: "scriptPath is nil")
