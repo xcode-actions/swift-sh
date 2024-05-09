@@ -41,15 +41,15 @@ final class BuildAndRunOptions : ParsableArguments {
 				) :
 				ScriptSource(content: scriptPathOrContent, fileManager: fm, logger: logger)
 		)
-		let scriptPath = try scriptSource.scriptPath?.0 ?! InternalError(message: "scriptPath is nil")
-		guard scriptSource.scriptPath?.isTmp == true else {throw InternalError(message: "scriptPath is not tmp")}
 		let cleanup = {
-			/* Notes:
-			 * We should probably also register a sigaction to remove the temporary file in case of a terminating signal.
-			 * Or we could remove the file just after launching swift with it (to be tested). */
-			let p = scriptPath.string
-			do    {try fm.removeItem(atPath: p)}
-			catch {logger.warning("Failed removing temporary file.", metadata: ["file-path": "\(p)", "error": "\(error)"])}
+			if let scriptPath = scriptSource.scriptPath, scriptPath.isTmp {
+				/* Notes:
+				 * We should probably also register a sigaction to remove the temporary file in case of a terminating signal.
+				 * Or we could remove the file just after launching swift with it (to be tested). */
+				let p = scriptPath.0.string
+				do    {try fm.removeItem(atPath: p)}
+				catch {logger.warning("Failed removings temporary file.", metadata: ["file-path": "\(p)", "error": "\(error)"])}
+			}
 		}
 		
 		let scriptPathForSwift: String
