@@ -104,7 +104,7 @@ struct DepsPackage {
 			/* The environment below tricks swift somehow into allowing the REPL when stdout is not a tty.
 			 * We do one better and give it a pty directly and we know we’re good. */
 //			environment: ["PATH": "/Applications/Xcode.app/Contents/Developer/usr/bin:/usr/bin:/bin:/usr/sbin:/sbin", "NSUnbufferedIO": "YES"],
-			stdin: nil, stdoutRedirect: .toFd(slaveFd, giveOwnership: true), stderrRedirect: .capture, additionalOutputFileDescriptors: [masterFd],
+			stdinRedirect: .fromNull, stdoutRedirect: .toFd(slaveFd, giveOwnership: true), stderrRedirect: .capture, additionalOutputFileDescriptors: [masterFd],
 			lineSeparators: .newLine(unix: true, legacyMacOS: false, windows: true/* Because of the pty, I think. */)
 		)
 		var ret: [String]?
