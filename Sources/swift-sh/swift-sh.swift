@@ -12,6 +12,7 @@ struct SwiftSH : AsyncParsableCommand {
 		commandName: "swift sh",
 		version: "3.0.0", /* TODO: Find a way to automatically update this when creating new versions… */
 		subcommands: [
+			Build.self,
 			Eject.self,
 			Run.self
 		],

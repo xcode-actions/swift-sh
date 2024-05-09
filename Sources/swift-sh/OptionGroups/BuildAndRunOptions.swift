@@ -8,6 +8,7 @@ import SystemPackage
 import ArgumentParser
 import Crypto
 import Logging
+import UnwrapOrThrow
 import XDG
 
 
@@ -27,24 +28,24 @@ final class BuildAndRunOptions : ParsableArguments {
 	var scriptOptions: ScriptOptions
 	
 	/* Returns the arguments that should be given to swift to run the script. */
-	func prepareRun(forceCopySource: Bool = false, logger: Logger) async throws -> (swiftArgs: [String], swiftStdin: Data?, cleanup: () -> Void) {
+	func prepareRun(forceCopySource: Bool = false, logger: Logger) async throws -> (swiftArgs: [String], swiftFileToRun: String, swiftStdin: Data?, packageFolderPath: FilePath?, cleanup: () -> Void) {
 		let fm = FileManager.default
 		let xdgDirs = try BaseDirectories(prefixAll: "swift-sh")
 		
 		let scriptSource = try (
 			!scriptPathIsContent ?
-				ScriptSource(path: FilePath(scriptPathOrContent), fileManager: fm) :
+				ScriptSource(copying: FilePath(scriptPathOrContent), fileManager: fm) :
 				ScriptSource(content: scriptPathOrContent, fileManager: fm, logger: logger)
 		)
+		let scriptPath = try scriptSource.scriptPath?.0 ?! InternalError(message: "scriptPath is nil")
+		guard scriptSource.scriptPath?.isTmp == true else {throw InternalError(message: "scriptPath is not tmp")}
 		let cleanup = {
-			if let scriptPath = scriptSource.scriptPath, scriptPath.isTmp {
-				/* Notes:
-				 * We should probably also register a sigaction to remove the temporary file in case of a terminating signal.
-				 * Or we could remove the file just after launching swift with it (to be tested). */
-				let p = scriptPath.0.string
-				do    {try fm.removeItem(atPath: p)}
-				catch {logger.warning("Failed removings temporary file.", metadata: ["file-path": "\(p)", "error": "\(error)"])}
-			}
+			/* Notes:
+			 * We should probably also register a sigaction to remove the temporary file in case of a terminating signal.
+			 * Or we could remove the file just after launching swift with it (to be tested). */
+			let p = scriptPath.string
+			do    {try fm.removeItem(atPath: p)}
+			catch {logger.warning("Failed removing temporary file.", metadata: ["file-path": "\(p)", "error": "\(error)"])}
 		}
 		
 		let scriptPathForSwift: String
@@ -63,9 +64,9 @@ final class BuildAndRunOptions : ParsableArguments {
 			skipPackageOnNoRemoteModules: skipPackageOnNoRemoteModules,
 			fileManager: fm, logger: logger
 		)
-		let swiftArgs = try await {
+		let (swiftArgs, packageFolderPath): ([String], FilePath?) = try await {
 			guard let depsPackage else {
-				return [String]()
+				return ([String](), nil)
 			}
 			/* Retrieve the REPL invocation in package folder path.
 			 * Note: This is not protected in regard to multiple scripts trying to use the same store entry.
@@ -92,11 +93,13 @@ final class BuildAndRunOptions : ParsableArguments {
 			} catch {
 				logger.warning("Failed to create marker link in swift-sh cache.", metadata: ["error": "\(error)", "marker-path": "\(packageFolderAliasPath.string)"])
 			}
-			return ret
+			return (ret, packageFolderPath)
 		}()
 		
-		return (swiftArgs + [scriptPathForSwift], scriptData?.0, cleanup)
+		return (swiftArgs, scriptPathForSwift, scriptData?.0, packageFolderPath, cleanup)
 	}
+	
+	private struct InternalError : Error {var message: String}
 	
 }
 
