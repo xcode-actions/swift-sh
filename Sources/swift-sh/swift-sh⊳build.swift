@@ -22,7 +22,7 @@ struct Build : AsyncParsableCommand {
 	
 	func run() async throws {
 		let finalCompiledFilePath = (
-			scriptPathIsContent ?
+			scriptPathIsContent || scriptPath == "-" ?
 				"main" :
 				scriptPath.removingLastComponent().appending(try scriptPath.stem ?! InternalError(message: "cannot get stem of input path"))
 		)
