@@ -24,7 +24,7 @@ final class GlobalOptions : ParsableArguments {
 //				
 //			case .cltLogger:
 				LoggingSystem.bootstrap({ label, metadataProvider in
-					var ret = CLTLogger(multilineMode: .allMultiline, metadataProvider: metadataProvider)
+					var ret = CLTLogger(metadataProvider: metadataProvider)
 //					ret.metadata = ["zz-label": "\(label)"] /* Note: CLTLogger does not use the label by default so we add it in the metadata. */
 					ret.logLevel = resolvedLogLevel
 					return ret
