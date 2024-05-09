@@ -13,6 +13,6 @@ final class ScriptOptions : ParsableArguments {
 	var scriptPathIsContent = false
 	
 	@Argument
-	var scriptPathOrContent: String
+	var scriptPathOrContent: String = "-"
 	
 }
