@@ -149,7 +149,10 @@ extension ImportSpecification {
 
 extension ImportSpecification.ModuleSource {
 	
-	static var hasLoggedObsoleteFormatWarning = false
+	/* TODO: Make this safe, I guess…
+	 * Technically I’m pretty sure we never access this variable concurrently, but the compiler ain’t happy (and I’m not sure).
+	 * For now let’s take the easy way out. */
+	static nonisolated(unsafe) var hasLoggedObsoleteFormatWarning = false
 	
 	init?(_ stringToParse: String, scriptFolder: FilePath, fileManager fm: FileManager, logger: Logger) {
 		/* Let’s try multiple formats until we find one that work. */
