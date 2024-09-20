@@ -19,6 +19,9 @@ final class BuildAndRunOptions : ParsableArguments {
 	var skipPackageOnNoRemoteModules = true
 	
 	@Flag(name: .long, inversion: .prefixedNo)
+	var buildDependenciesInReleaseMode = false
+	
+	@Flag(name: .long, inversion: .prefixedNo)
 	var disableSandboxForPackageResolution = false
 	
 	@Option(name: .long)
@@ -79,6 +82,7 @@ final class BuildAndRunOptions : ParsableArguments {
 			let packageFolderPath = try xdgDirs.ensureCacheDirPath(packageFolderRelativePath)
 			let ret = try await depsPackage.retrieveREPLInvocation(
 				packageFolder: packageFolderPath,
+				buildDependenciesInReleaseMode: buildDependenciesInReleaseMode,
 				disableSandboxForPackageResolution: disableSandboxForPackageResolution,
 				fileManager: fm, logger: logger
 			)
