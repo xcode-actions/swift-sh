@@ -87,7 +87,7 @@ struct DepsPackage {
 			try Data().write(to: emptyFilePath.url)
 		}
 		
-		/* Note: openpty is more or less deprecated and we should use the more complex but POSIX compliant to open the PTY.
+		/* Note: openpty is more or less deprecated and we should use the more complex but POSIX compliant way to open the PTY.
 		 * See relevant test in swift-process-invocation for more info. */
 		var slaveRawFd: Int32 = 0
 		var masterRawFd: Int32 = 0
@@ -160,7 +160,17 @@ struct DepsPackage {
 		}
 		/* Now swift has given us the arguments it thinks are needed to start the script.
 		 * Spoiler: they are not enough!
-		 * When the deps contain an xcframework dependency, we have to add the -I option for swift to find the headers of the frameworks. */
+		 * - When the deps contain an xcframework dependency, we have to add the -I option for swift to find the headers of the frameworks.
+		 * - Starting w/ Swift 6, the arguments given by the REPL invocation give an incorrect include search path:
+		 *    we must add `/Modules` to the include path.
+		 *   Because we still want to be compatible w/ Xcode < 6, we add the fixed search path before the one given by the REPL invocation. */
+		/* Add `/Modules` variants import options for Swift 6. */
+		for (idx, arg) in ret.enumerated() {
+			if arg.hasPrefix("-I") {
+				ret.insert(arg + "/Modules", at: idx)
+			}
+		}
+		/* Add xcframework import options. */
 		let artifactsFolder = packageFolder.appending(".build/artifacts")
 		if let directoryEnumerator = fm.enumerator(at: artifactsFolder.url, includingPropertiesForKeys: nil) {
 			while let url = directoryEnumerator.nextObject() as! URL? {

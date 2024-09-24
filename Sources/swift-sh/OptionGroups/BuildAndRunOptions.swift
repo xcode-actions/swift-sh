@@ -19,7 +19,7 @@ final class BuildAndRunOptions : ParsableArguments {
 	var skipPackageOnNoRemoteModules = true
 	
 	@Flag(name: .long, inversion: .prefixedNo)
-	var buildDependenciesInReleaseMode = false
+	var buildDependenciesInReleaseMode = true
 	
 	@Flag(name: .long, inversion: .prefixedNo)
 	var disableSandboxForPackageResolution = false
