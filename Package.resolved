@@ -1,4 +1,5 @@
 {
+  "originHash" : "cac3e464d0883cf5748c2959851614ab0a7feb461d64950cf16a609a7378f4cc",
   "pins" : [
     {
       "identity" : "clt-logger",
@@ -68,8 +69,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/xcode-actions/swift-process-invocation.git",
       "state" : {
-        "revision" : "995fc747c53e4dfaa7335a47511897c810ef2a01",
-        "version" : "1.1.0-beta.2"
+        "revision" : "76f64c121839b3f9da5ebddbdcfd82f8ff953c77",
+        "version" : "1.2.0"
       }
     },
     {
@@ -109,5 +110,5 @@
       }
     }
   ],
-  "version" : 2
+  "version" : 3
 }
