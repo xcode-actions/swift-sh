@@ -161,13 +161,33 @@ struct DepsPackage {
 		/* Now swift has given us the arguments it thinks are needed to start the script.
 		 * Spoiler: they are not enough!
 		 * - When the deps contain an xcframework dependency, we have to add the -I option for swift to find the headers of the frameworks.
-		 * - Starting w/ Swift 6, the arguments given by the REPL invocation give an incorrect include search path:
-		 *    we must add `/Modules` to the include path.
-		 *   Because we still want to be compatible w/ Xcode < 6, we add the fixed search path before the one given by the REPL invocation. */
+		 * - Starting w/ Swift 6, the arguments given by the REPL invocation give an incorrect include search path: we must add `/Modules` to the include path.
+		 *   We check whether the `Modules` folder exists and add it to the command-line if it does.
+		 *   Previously we added it the modified version unconditionally for each -I arguments,
+		 *    but if both versions are present we get compilation errors for some dependencies (for ArgumentParser for instance). */
 		/* Add `/Modules` variants import options for Swift 6. */
-		for (idx, arg) in ret.enumerated() {
-			if arg.hasPrefix("-I") {
-				ret.insert(arg + "/Modules", at: idx)
+		var idx = 0
+		while idx < ret.count {
+			defer {idx += 1}
+			let (path, hasDashI): (String, Bool)
+			if ret[idx] == "-I" {
+				idx += 1
+				guard idx < ret.count else {
+					break
+				}
+				path = ret[idx]
+				hasDashI = false
+			} else if ret[idx].hasPrefix("-I") {
+				path = String(ret[idx].dropFirst(2))
+				hasDashI = true
+			} else {
+				continue
+			}
+			
+			var isDir = ObjCBool(false)
+			let pathWithModules = String(path.reversed().drop(while: { $0 == "/" }).reversed()) + "/Modules"
+			if fm.fileExists(atPath: pathWithModules, isDirectory: &isDir) && isDir.boolValue {
+				ret[idx] = (hasDashI ? "-I" : "") + pathWithModules
 			}
 		}
 		/* Add xcframework import options. */
