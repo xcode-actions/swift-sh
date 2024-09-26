@@ -164,7 +164,8 @@ struct DepsPackage {
 		 * - Starting w/ Swift 6, the arguments given by the REPL invocation give an incorrect include search path: we must add `/Modules` to the include path.
 		 *   We check whether the `Modules` folder exists and add it to the command-line if it does.
 		 *   Previously we added it the modified version unconditionally for each -I arguments,
-		 *    but if both versions are present we get compilation errors for some dependencies (for ArgumentParser for instance). */
+		 *    but if both versions are present we get compilation errors for some dependencies (for ArgumentParser for instance).
+		 * - For some dependencies that have a system library target, the path to the module.modulemap of the target should be added. */
 		/* Add `/Modules` variants import options for Swift 6. */
 		var idx = 0
 		while idx < ret.count {
@@ -208,6 +209,21 @@ struct DepsPackage {
 						ret.append("-I\(url.absoluteURL.path)")
 						directoryEnumerator.skipDescendants()
 					}
+				}
+			}
+		}
+		/* Add module.modulemap in the source code checkouts that are “[system]”.
+		 * Note there is probably a much better way of doing this, but I don’t know it. */
+		let checkoutFolder = packageFolder.appending(".build/checkouts")
+		if let directoryEnumerator = fm.enumerator(at: checkoutFolder.url, includingPropertiesForKeys: nil) {
+			while let url = directoryEnumerator.nextObject() as! URL? {
+				/* These rules are ad-hoc and work in the case I tested (an XcodeTools dependency).
+				 * There are probably many cases where they won’t work. */
+				if url.lastPathComponent.lowercased() == "module.modulemap",
+					try String(contentsOf: url).contains("[system]")
+				{
+					ret.append("-I\(url.deletingLastPathComponent().absoluteURL.path)")
+					directoryEnumerator.skipDescendants()
 				}
 			}
 		}
