@@ -220,7 +220,7 @@ struct DepsPackage {
 				/* These rules are ad-hoc and work in the case I tested (an XcodeTools dependency).
 				 * There are probably many cases where they won’t work. */
 				if url.lastPathComponent.lowercased() == "module.modulemap",
-					try String(contentsOf: url).contains("[system]")
+					try String(contentsOf: url, encoding: .utf8).contains("[system]")
 				{
 					ret.append("-I\(url.deletingLastPathComponent().absoluteURL.path)")
 					directoryEnumerator.skipDescendants()
