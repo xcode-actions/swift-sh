@@ -1,4 +1,4 @@
-#!/usr/bin/swift sh
+#!/usr/bin/env -S swift-sh --
 import Foundation
 
 import Ink /* @JohnSundell == 0.5.0 */

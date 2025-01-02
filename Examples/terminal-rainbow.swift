@@ -1,4 +1,4 @@
-#!/usr/bin/swift sh
+#!/usr/bin/env -S swift-sh --
 import Foundation
 
 import Chalk /* @mxcl == 0.4.0 */
