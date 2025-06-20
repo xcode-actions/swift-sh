@@ -148,10 +148,11 @@ struct DepsPackage {
 						logger.warning("Got line from unknown fd from swift.", metadata: ["fd": "\(lineWithSource.fd)", "line-or-hex": "\(lineWithSource.strLineOrHex())"])
 				}
 			}
-		} catch ProcessInvocationError.unexpectedSubprocessExit {
+		} catch ProcessInvocationError.unexpectedSubprocessExit(let terminationStatus, let terminationReason) {
 			/* Even if we succeed in getting something we deliberately fail as the swift command failed.
 			 * We catch the error because we want to have something less harsh than just
 			 *  `Error: unexpectedSubprocessExit(terminationStatus: 1, terminationReason: __C.NSTaskTerminationReason)` in swift-sh output. */
+			logger.warning("swift invocation for finding REPL args failed with unexpected subprocess exit.", metadata: ["termination_status": "\(terminationStatus)", "termination_reason": "\(terminationReason.rawValue)"])
 			ret = nil
 		}
 		guard var ret else {
