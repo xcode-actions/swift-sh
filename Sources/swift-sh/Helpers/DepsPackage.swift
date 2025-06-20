@@ -105,7 +105,8 @@ struct DepsPackage {
 			 * We do one better and give it a pty directly and we know we’re good. */
 //			environment: ["PATH": "/Applications/Xcode.app/Contents/Developer/usr/bin:/usr/bin:/bin:/usr/sbin:/sbin", "NSUnbufferedIO": "YES"],
 			stdinRedirect: .fromNull, stdoutRedirect: .toFd(slaveFd, giveOwnership: true), stderrRedirect: .capture, additionalOutputFileDescriptors: [masterFd],
-			lineSeparators: .newLine(unix: true, legacyMacOS: false, windows: true/* Because of the pty, I think. */)
+			lineSeparators: .newLine(unix: true, legacyMacOS: false, windows: true/* Because of the pty, I think. */),
+			expectedTerminations: [(0, .exit), (9, .uncaughtSignal)/* For some unknown reason, in GitHub Actions, swift ends properly but is reported as having been killed with uncaught signal 9. */]
 		)
 		var ret: [String]?
 		var errorOutput = [String]()
