@@ -1,13 +1,9 @@
 import Foundation
-#if canImport(System)
-import System
-#else
-import SystemPackage
-#endif
 
 import ArgumentParser
 import Logging
 import ProcessInvocation
+import SystemPackage
 import UnwrapOrThrow
 
 

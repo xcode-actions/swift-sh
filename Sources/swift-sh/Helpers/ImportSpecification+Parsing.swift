@@ -1,12 +1,8 @@
 import Foundation
 import RegexBuilder
-#if canImport(System)
-import System
-#else
-import SystemPackage
-#endif
 
 import Logging
+import SystemPackage
 import UnwrapOrThrow
 import Version
 

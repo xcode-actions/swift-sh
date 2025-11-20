@@ -1,13 +1,9 @@
 import Foundation
-#if canImport(System)
-import System
-#else
-import SystemPackage
-#endif
 
 import ArgumentParser
 import Crypto
 import Logging
+import SystemPackage
 import UnwrapOrThrow
 import XDG
 
@@ -79,7 +75,7 @@ final class BuildAndRunOptions : ParsableArguments {
 			 * Note: This is not protected in regard to multiple scripts trying to use the same store entry.
 			 * TODO: Make the REPL invocation retrieval concurrent-safe, or at least concurrent-protected. */
 			let packageFolderRelativePath = FilePath("store").appending(depsPackage.packageHash.reduce("", { $0 + String(format: "%02x", $1) }))
-			let packageFolderPath = try xdgDirs.ensureCacheDirPath(packageFolderRelativePath)
+			let packageFolderPath = try FilePath(xdgDirs.ensureCacheDirPath(.init(packageFolderRelativePath.string)).string)
 			let ret = try await depsPackage.retrieveREPLInvocation(
 				packageFolder: packageFolderPath,
 				buildDependenciesInReleaseMode: buildDependenciesInReleaseMode,
@@ -92,7 +88,7 @@ final class BuildAndRunOptions : ParsableArguments {
 			let packageFolderAliasDiscriminator = Insecure.MD5
 				.hash(data: scriptData?.hash ?? Data(scriptPathForSwift.utf8))
 				.reduce("", { $0 + String(format: "%02x", $1) })
-			let markersFolderPath = try xdgDirs.ensureCacheDirPath(FilePath("markers"))
+			let markersFolderPath = try FilePath(xdgDirs.ensureCacheDirPath(.init("markers")).string)
 			let packageFolderAliasPath = markersFolderPath.appending("\(scriptSource.scriptName)--\(packageFolderAliasDiscriminator)")
 			do {
 				try? fm.removeItem(at: packageFolderAliasPath.url)
