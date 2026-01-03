@@ -39,7 +39,8 @@ struct Build : AsyncParsableCommand {
 		}
 		
 		try await ProcessInvocation(
-			FilePath(swiftPath.string + "c"), args: args + [swiftFile], usePATH: true,
+			/* The “headerpad_max_install_names” option allows later addition of the rpath required for the binary to run. */
+			FilePath(swiftPath.string + "c"), args: args + ["-Xlinker", "-headerpad_max_install_names"] + [swiftFile], usePATH: true,
 			workingDirectory: swiftFilePath.removingLastComponent().url,
 			stdinRedirect: stdinData.flatMap{ .send($0) } ?? .none(), stdoutRedirect: .none, stderrRedirect: .none,
 			signalHandling: { .mapForChild(for: $0, with: [.interrupt: .terminated]/* Swift eats the interrupts for some reasons… */) }
