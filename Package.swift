@@ -20,7 +20,7 @@ let package = Package(
 		.package(url: "https://github.com/apple/swift-crypto.git",                     "1.0.0" ..< "4.0.0"),
 		.package(url: "https://github.com/apple/swift-system.git",                     from: "1.0.0"), /* We’re aware of the existence of System on macOS. After some thinking/research, we decided to agree with <https://forums.swift.org/t/50719/5>. */
 		.package(url: "https://github.com/Frizlab/swift-xdg.git",                      from: "1.0.0"),
-		.package(url: "https://github.com/Frizlab/UnwrapOrThrow.git",                  from: "1.0.1"),
+		.package(url: "https://github.com/Frizlab/UnwrapOrThrow.git",                  from: "1.1.0"),
 		.package(url: "https://github.com/mxcl/LegibleError.git",                      from: "1.0.0"),
 		.package(url: "https://github.com/mxcl/Version.git",                           from: "2.0.0"),
 		.package(url: "https://github.com/xcode-actions/clt-logger.git",               from: "1.0.0"),
@@ -45,6 +45,8 @@ let package = Package(
 			.product(name: "CLTLogger",         package: "clt-logger"),
 			.product(name: "ProcessInvocation", package: "swift-process-invocation"),
 			.product(name: "StreamReader",      package: "stream-reader"),
+			.product(name: "SystemPackage",     package: "swift-system"),
+			.product(name: "UnwrapOrThrow",     package: "UnwrapOrThrow"),
 			.product(name: "XDG",               package: "swift-xdg"),
 		], swiftSettings: noSwiftSettings),
 		.testTarget(name: "swift-shTests", dependencies: [

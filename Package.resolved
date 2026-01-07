@@ -1,5 +1,5 @@
 {
-  "originHash" : "7c269dd7e251ae426716de10374a6dcebaf5bf922d94684e9f1fe5f0e45f6062",
+  "originHash" : "cdffa1ae9d93427032f9c9b896624b449fc0fa2b0b3f0d375e4f1da9ac136129",
   "pins" : [
     {
       "identity" : "clt-logger",
@@ -105,8 +105,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/Frizlab/UnwrapOrThrow.git",
       "state" : {
-        "revision" : "085ea7b599b0db956541b7189a57b0c98f15337f",
-        "version" : "1.0.1"
+        "revision" : "246986d89765fd9df1e920cf4b6b4845ebf053d7",
+        "version" : "1.1.0"
       }
     },
     {

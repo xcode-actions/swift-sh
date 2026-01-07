@@ -2,4 +2,6 @@
 @_exported import CLTLogger
 @_exported import ProcessInvocation
 @_exported import StreamReader
+@_exported import SystemPackage
+@_exported import UnwrapOrThrow
 @_exported import XDG
