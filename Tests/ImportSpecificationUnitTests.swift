@@ -3,6 +3,7 @@ import SystemPackage
 import Testing
 
 import Logging
+import Version
 
 @testable import swift_sh
 
@@ -271,7 +272,44 @@ struct ImportSpecificationUnitTests {
 //		XCTAssertEqual(b?.importName, "Foo")
 //	}
 	
-//	func testHelpersImport() throws {
-//	}
+	@Test
+	func testUnversionedHelpersImport() throws {
+		let parsed = try #require(ImportSpecification(line: "import SwiftSH_Helpers", scriptFolder: cwdPath, fileManager: fileManager, logger: logger))
+		#expect(parsed.moduleName == "SwiftSH_Helpers")
+		#expect(parsed.moduleSource == .github(user: "xcode-actions", repo: "swift-sh"))
+		#expect(parsed.constraint == Version(SwiftSH.configuration.version).map{ .exact($0) } ?? .latest)
+	}
+	
+	@Test
+	func testVersionedHelpersImport() throws {
+		let parsed = try #require(ImportSpecification(line: "import SwiftSH_Helpers // @xcode-actions/swift-sh ~> 3.0", scriptFolder: cwdPath, fileManager: fileManager, logger: logger))
+		#expect(parsed.moduleName == "SwiftSH_Helpers")
+		#expect(parsed.moduleSource == .github(user: "xcode-actions", repo: "swift-sh"))
+		#expect(parsed.constraint == .upToNextMajor(from: .init(3, 0, 0)))
+	}
+	
+	@Test
+	func testVersionedHelpersImportNoRepo() throws {
+		let parsed = try #require(ImportSpecification(line: "import SwiftSH_Helpers // ~> 3.0", scriptFolder: cwdPath, fileManager: fileManager, logger: logger))
+		#expect(parsed.moduleName == "SwiftSH_Helpers")
+		#expect(parsed.moduleSource == .github(user: "xcode-actions", repo: "swift-sh"))
+		#expect(parsed.constraint == .upToNextMajor(from: .init(3, 0, 0)))
+	}
+	
+	@Test
+	func testExactVersionedHelpersImportNoRepo() throws {
+		let parsed = try #require(ImportSpecification(line: "import SwiftSH_Helpers // == 3.0  ", scriptFolder: cwdPath, fileManager: fileManager, logger: logger))
+		#expect(parsed.moduleName == "SwiftSH_Helpers")
+		#expect(parsed.moduleSource == .github(user: "xcode-actions", repo: "swift-sh"))
+		#expect(parsed.constraint == .exact(.init(3, 0, 0)))
+	}
+	
+	@Test
+	func testExactVersionedHelpersStarCommentImportNoRepo() throws {
+		let parsed = try #require(ImportSpecification(line: "import SwiftSH_Helpers /*  ==  3.1.21  */ ", scriptFolder: cwdPath, fileManager: fileManager, logger: logger))
+		#expect(parsed.moduleName == "SwiftSH_Helpers")
+		#expect(parsed.moduleSource == .github(user: "xcode-actions", repo: "swift-sh"))
+		#expect(parsed.constraint == .exact(.init(3, 1, 21)))
+	}
 	
 }

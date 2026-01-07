@@ -27,8 +27,8 @@ extension ImportSpecification {
 		let moduleOriginRef = Reference(ModuleSource.self)
 		let constraintTypeRef = Reference(ConstraintType?.self)
 		let constraintValueRef = Reference(String?.self)
-		let moduleOriginAndConstraintForSlashStarRef = Reference(String?.self)
-		let moduleOriginAndConstraintForDoubleSlashRef = Reference(String?.self)
+		let slashStarCommentContentRef = Reference(String?.self)
+		let doubleSlashCommentContentRef = Reference(String?.self)
 		
 		/* Sub-regexes. */
 		let moduleOriginRegex = Regex{
@@ -47,6 +47,25 @@ extension ImportSpecification {
 			Capture(as: constraintValueRef){
 				OneOrMore{ .whitespace.inverted }
 			}transform:{ substr in String(substr) }
+		}
+		/* This one is only for the special SwiftSH_Helpers w/ only the constraint specified in the comment. */
+		let constraintCommentRegex = Regex{
+			ChoiceOf{
+				Regex{
+					"/*"
+					maybeWhitespace
+					Capture(constraintRegex, as: slashStarCommentContentRef, transform: { String($0) })
+					maybeWhitespace
+					"*/"
+				}
+				Regex{
+					"//"
+					maybeWhitespace
+					Capture(constraintRegex, as: doubleSlashCommentContentRef, transform: { String($0) })
+					maybeWhitespace
+					Anchor.endOfLine
+				}
+			}
 		}
 		let moduleOriginAndConstraintsRegex = Regex{
 			maybeWhitespace
@@ -77,16 +96,42 @@ extension ImportSpecification {
 			ChoiceOf{
 				Regex{
 					"/*"
-					Capture(moduleOriginAndConstraintsRegex, as: moduleOriginAndConstraintForSlashStarRef, transform: { String($0) })
+					Capture(moduleOriginAndConstraintsRegex, as: slashStarCommentContentRef, transform: { String($0) })
 					"*/"
 				}
 				Regex{
 					"//"
-					Capture(moduleOriginAndConstraintsRegex, as: moduleOriginAndConstraintForDoubleSlashRef, transform: { String($0) })
+					Capture(moduleOriginAndConstraintsRegex, as: doubleSlashCommentContentRef, transform: { String($0) })
+					maybeWhitespace
 					Anchor.endOfLine
 				}
 			}
 		}
+		
+		/* Convenience function to convert a constraint match to a constraint. */
+		func constraintFrom(constraintType: ConstraintType?, constraintValue: String?) -> Constraint? {
+			if let constraintType, let constraintValue {
+				if let constraintVersion = Version(tolerant: constraintValue) {
+					switch constraintType {
+						case .exact:         return .exact(constraintVersion)
+						case .upToNextMajor: return .upToNextMajor(from: constraintVersion)
+					}
+				} else {
+					guard constraintType == .exact else {
+						logger.warning("Invalid constraint found with a non-exact type but a non-compliant version.", metadata: [
+							"line": "\(line)",
+							"constraint-type": "\(constraintType)",
+							"constraint-value": "\(constraintValue)"
+						])
+						return nil
+					}
+					return .ref(constraintValue)
+				}
+			} else {
+				return .latest
+			}
+		}
+		
 		/* Let’s try and match this.
 		 * We do a double-pass match because it is clearer than having two variables for the module origin, constraint type and constraint value.
 		 * Instead we have two variables for the full “module origin and constraints” match, which we re-match later.
@@ -95,12 +140,25 @@ extension ImportSpecification {
 			/* If the match failed, we check the special case of the import of SwiftSH_Helpers.
 			 * This package does not need to have an import specification: we _know_ them already.
 			 * The regex is not perfect (it’s a regex), but it’ll do for our use case. */
-			if (try? #/(^|;)(\s*@testable)?\s*import(\s+(class|enum|struct))?\s+SwiftSH_Helpers(\.[^\s]+)?/#.firstMatch(in: line)) != nil {
+			if let match = (try? #/(^|;)(\s*@testable)?\s*import(\s+(class|enum|struct))?\s+SwiftSH_Helpers(\.[^\s]+)?\s*/#.firstMatch(in: line)) {
 				self.moduleName = "SwiftSH_Helpers"
 				self.moduleSource = .github(user: "xcode-actions", repo: "swift-sh")
-				/* The Version init should never fail but we fallback to .latest if it were to fail…
-				 * TODO: We should be able to specify _which_ version of the helpers we want! */
-				self.constraint = Version(SwiftSH.configuration.version).flatMap{ .exact($0) } ?? .latest
+				
+				let lineMinusImport = String(line[match.range.upperBound...])
+				/* Let’s see if we can parse a version spec in the rest of the line. */
+				if let commentContentMatch = (try? constraintCommentRegex.firstMatch(in: lineMinusImport)) {
+					/* Exactly one of the two reference must have matched. */
+					assert((commentContentMatch[slashStarCommentContentRef] == nil) != (commentContentMatch[doubleSlashCommentContentRef] == nil))
+					/* Let’s match the comment content to the constraint. */
+					let constraintMatch = try! constraintRegex.wholeMatch(in: (commentContentMatch[slashStarCommentContentRef] ?? commentContentMatch[doubleSlashCommentContentRef])!)!
+					guard let constraint = constraintFrom(constraintType: constraintMatch[constraintTypeRef], constraintValue: constraintMatch[constraintValueRef]) else {
+						return nil
+					}
+					self.constraint = constraint
+				} else {
+					/* The Version init should never fail but we fallback to .latest if it were to fail… */
+					self.constraint = Version(SwiftSH.configuration.version).flatMap{ .exact($0) } ?? .latest
+				}
 				return
 			}
 			if (try? #/^(\s*@testable\s)?\s*import(\s+(class|enum|struct))?\s+[\w_]+(\.[^\s]+)?\s+(//|/*)/#.firstMatch(in: line)) != nil {
@@ -109,8 +167,8 @@ extension ImportSpecification {
 			return nil
 		}
 		/* Exactly one of the two reference must have matched. */
-		assert((match1[moduleOriginAndConstraintForSlashStarRef] == nil) != (match1[moduleOriginAndConstraintForDoubleSlashRef] == nil))
-		let moduleOriginAndConstraints = (match1[moduleOriginAndConstraintForSlashStarRef] ?? match1[moduleOriginAndConstraintForDoubleSlashRef])!
+		assert((match1[slashStarCommentContentRef] == nil) != (match1[doubleSlashCommentContentRef] == nil))
+		let moduleOriginAndConstraints = (match1[slashStarCommentContentRef] ?? match1[doubleSlashCommentContentRef])!
 		
 		/* Now let’s match the moduleOriginAndConstraints against its regex. */
 		let match2 = try! moduleOriginAndConstraintsRegex.wholeMatch(in: moduleOriginAndConstraints)!
@@ -119,26 +177,10 @@ extension ImportSpecification {
 		
 		self.moduleName = String(match1[moduleNameRef])
 		self.moduleSource = match2[moduleOriginRef]
-		if let constraintType = match2[constraintTypeRef], let constraintValue = match2[constraintValueRef] {
-			if let constraintVersion = Version(tolerant: constraintValue) {
-				switch constraintType {
-					case .exact:         self.constraint = .exact(constraintVersion)
-					case .upToNextMajor: self.constraint = .upToNextMajor(from: constraintVersion)
-				}
-			} else {
-				guard constraintType == .exact else {
-					logger.warning("Invalid constraint found with a non-exact type but a non-compliant version.", metadata: [
-						"line": "\(line)",
-						"constraint-type": "\(constraintType)",
-						"constraint-value": "\(constraintValue)"
-					])
-					return nil
-				}
-				self.constraint = .ref(constraintValue)
-			}
-		} else {
-			self.constraint = .latest
+		guard let constraint = constraintFrom(constraintType: match2[constraintTypeRef], constraintValue: match2[constraintValueRef]) else {
+			return nil
 		}
+		self.constraint = constraint
 	}
 	
 }
