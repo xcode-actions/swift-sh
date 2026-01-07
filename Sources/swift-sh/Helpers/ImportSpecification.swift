@@ -9,7 +9,7 @@ import Version
 
 struct ImportSpecification {
 	
-	enum ModuleSource {
+	enum ModuleSource : Equatable {
 		
 		case url(URL)
 		case scp(String)
@@ -18,7 +18,7 @@ struct ImportSpecification {
 		
 	}
 	
-	enum Constraint {
+	enum Constraint : Equatable {
 		
 		case upToNextMajor(from: Version) /* "~>" followed by a version */
 		case exact(Version)               /* "==" followed by a version */
