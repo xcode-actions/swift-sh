@@ -17,7 +17,7 @@ struct ImportSpecificationUnitTests {
 	
 	@Test
 	func testWigglyArrow() throws {
-		let parsed = try #require(ImportSpecification(line: "import Foo // @mxcl ~> 1.0", scriptFolder: ".", fileManager: fileManager, logger: logger))
+		let parsed = try #require(ImportSpecification(line: "import Foo // @mxcl ~> 1.0", scriptFolder: cwdPath, fileManager: fileManager, logger: logger))
 		#expect(parsed.moduleName == "Foo")
 		#expect(parsed.moduleSource == .github(user: "mxcl", repo: nil))
 		#expect(parsed.constraint == .upToNextMajor(from: .one))
@@ -25,7 +25,7 @@ struct ImportSpecificationUnitTests {
 	
 	@Test
 	func testTrailingWhitespace() throws {
-		let parsed = try #require(ImportSpecification(line: "import Foo // @mxcl ~> 1.0 ", scriptFolder: ".", fileManager: fileManager, logger: logger))
+		let parsed = try #require(ImportSpecification(line: "import Foo // @mxcl ~> 1.0 ", scriptFolder: cwdPath, fileManager: fileManager, logger: logger))
 		#expect(parsed.moduleName == "Foo")
 		#expect(parsed.moduleSource == .github(user: "mxcl", repo: nil))
 		#expect(parsed.constraint == .upToNextMajor(from: .one))
@@ -33,7 +33,7 @@ struct ImportSpecificationUnitTests {
 	
 	@Test
 	func testExact() throws {
-		let parsed = try #require(ImportSpecification(line: "import Foo // @mxcl == 1.0", scriptFolder: ".", fileManager: fileManager, logger: logger))
+		let parsed = try #require(ImportSpecification(line: "import Foo // @mxcl == 1.0", scriptFolder: cwdPath, fileManager: fileManager, logger: logger))
 		#expect(parsed.moduleName == "Foo")
 		#expect(parsed.moduleSource == .github(user: "mxcl", repo: nil))
 		#expect(parsed.constraint == .exact(.one))
@@ -41,7 +41,7 @@ struct ImportSpecificationUnitTests {
 	
 	@Test
 	func testMoreSpaces() throws {
-		let parsed = try #require(ImportSpecification(line: "import    Foo       //     @mxcl    ~>      1.0", scriptFolder: ".", fileManager: fileManager, logger: logger))
+		let parsed = try #require(ImportSpecification(line: "import    Foo       //     @mxcl    ~>      1.0", scriptFolder: cwdPath, fileManager: fileManager, logger: logger))
 		#expect(parsed.moduleName == "Foo")
 		#expect(parsed.moduleSource == .github(user: "mxcl", repo: nil))
 		#expect(parsed.constraint == .upToNextMajor(from: .one))
@@ -54,7 +54,7 @@ struct ImportSpecificationUnitTests {
 		 * (And that I initially did the regex with the space assumption and I do not want to change that haha.)
 		 * With our parsing, the only path that cannot be represented is one that contains a space.
 		 * Eventually we should also be able to support that case, but there’s no rush for that. */
-		let parsed = try #require(ImportSpecification(line: "import Foo//@mxcl ~>1.0", scriptFolder: ".", fileManager: fileManager, logger: logger))
+		let parsed = try #require(ImportSpecification(line: "import Foo//@mxcl ~>1.0", scriptFolder: cwdPath, fileManager: fileManager, logger: logger))
 		#expect(parsed.moduleName == "Foo")
 		#expect(parsed.moduleSource == .github(user: "mxcl", repo: nil))
 		#expect(parsed.constraint == .upToNextMajor(from: .one))
@@ -63,15 +63,15 @@ struct ImportSpecificationUnitTests {
 	@Test
 	func testNoSpaces() throws {
 		/* Note: See previous test for more info. */
-		let parsed = try #require(ImportSpecification(line: "import Foo//@mxcl~>1.0", scriptFolder: ".", fileManager: fileManager, logger: logger))
+		let parsed = try #require(ImportSpecification(line: "import Foo//@mxcl~>1.0", scriptFolder: cwdPath, fileManager: fileManager, logger: logger))
 		#expect(parsed.moduleName == "Foo")
-		#expect(parsed.moduleSource == .local("@mxcl~>1.0", scriptFolder: "."))
+		#expect(parsed.moduleSource == .local("@mxcl~>1.0", scriptFolder: cwdPath))
 		#expect(parsed.constraint == .latest)
 	}
 	
 	@Test
 	func testCanOverrideImportName() throws {
-		let parsed = try #require(ImportSpecification(line: "import Foo  // @mxcl/Bar ~> 1.0", scriptFolder: ".", fileManager: fileManager, logger: logger))
+		let parsed = try #require(ImportSpecification(line: "import Foo  // @mxcl/Bar ~> 1.0", scriptFolder: cwdPath, fileManager: fileManager, logger: logger))
 		#expect(parsed.moduleName == "Foo")
 		#expect(parsed.moduleSource == .github(user: "mxcl", repo: "Bar"))
 		#expect(parsed.constraint == .upToNextMajor(from: .one))
@@ -79,7 +79,7 @@ struct ImportSpecificationUnitTests {
 	
 	@Test
 	func testCanOverrideImportNameLegacyFormat() throws {
-		let parsed = try #require(ImportSpecification(line: "import Foo  // mxcl/Bar ~> 1.0", scriptFolder: ".", fileManager: fileManager, logger: logger))
+		let parsed = try #require(ImportSpecification(line: "import Foo  // mxcl/Bar ~> 1.0", scriptFolder: cwdPath, fileManager: fileManager, logger: logger))
 		#expect(parsed.moduleName == "Foo")
 		#expect(parsed.moduleSource == .github(user: "mxcl", repo: "Bar"))
 		#expect(parsed.constraint == .upToNextMajor(from: .one))
@@ -87,7 +87,7 @@ struct ImportSpecificationUnitTests {
 	
 	@Test
 	func testCanOverrideImportNameUsingNameWithHyphen() throws {
-		let parsed = try #require(ImportSpecification(line: "import Bar  // @mxcl/swift-bar ~> 1.0", scriptFolder: ".", fileManager: fileManager, logger: logger))
+		let parsed = try #require(ImportSpecification(line: "import Bar  // @mxcl/swift-bar ~> 1.0", scriptFolder: cwdPath, fileManager: fileManager, logger: logger))
 		#expect(parsed.moduleName == "Bar")
 		#expect(parsed.moduleSource == .github(user: "mxcl", repo: "swift-bar"))
 		#expect(parsed.constraint == .upToNextMajor(from: .one))
@@ -196,12 +196,13 @@ struct ImportSpecificationUnitTests {
 //		XCTAssertEqual(b?.packageLine, ".package(path: \"\(tmpPath.string)\")")
 //	}
 	
-//	func testCanProvideFullURL() throws {
-//		let b = try parse("import Foo  // https://example.com/mxcl/Bar.git ~> 1.0", from: .path(Path.cwd.join("script.swift")))
-//		XCTAssertEqual(b?.dependencyName, .url(URL(string: "https://example.com/mxcl/Bar.git")!))
-//		XCTAssertEqual(b?.constraint, .upToNextMajor(from: .one))
-//		XCTAssertEqual(b?.importName, "Foo")
-//	}
+	@Test
+	func testCanProvideFullURL() throws {
+		let parsed = try #require(ImportSpecification(line: "import Foo  // https://example.com/mxcl/Bar.git ~> 1.0", scriptFolder: cwdPath, fileManager: fileManager, logger: logger))
+		#expect(parsed.moduleName == "Foo")
+		#expect(parsed.moduleSource == .url(URL(string: "https://example.com/mxcl/Bar.git")!))
+		#expect(parsed.constraint == .upToNextMajor(from: .one))
+	}
 	
 //	func testCanProvideFullURLWithHyphen() throws {
 //		let b = try parse("import Bar  // https://example.com/mxcl/swift-bar.git ~> 1.0", from: .path(Path.cwd.join("script.swift")))
@@ -219,14 +220,14 @@ struct ImportSpecificationUnitTests {
 //		XCTAssertEqual(b?.dependencyName.urlString, url)
 //	}
 	
-//	func testCanProvideCommonSSHURLStyle() throws {
-//		let uri = "git@github.com:MariusCiocanel/Path.swift.git"
-//		let b = try parse("import Path  // \(uri) ~> 1.0", from: .path(Path.cwd.join("script.swift")))
-//		XCTAssertEqual(b?.dependencyName, .scp(uri))
-//		XCTAssertEqual(b?.constraint, .upToNextMajor(from: .one))
-//		XCTAssertEqual(b?.importName, "Path")
-//		XCTAssertEqual(b?.dependencyName.urlString, "git@github.com:MariusCiocanel/Path.swift.git")
-//	}
+	@Test
+	func testCanProvideCommonSSHURLStyle() throws {
+		let uri = "git@github.com:MariusCiocanel/Path.swift.git"
+		let parsed = try #require(ImportSpecification(line: "import Path  // \(uri) ~> 1.0", scriptFolder: cwdPath, fileManager: fileManager, logger: logger))
+		#expect(parsed.moduleName == "Path")
+		#expect(parsed.moduleSource == .scp(uri))
+		#expect(parsed.constraint == .upToNextMajor(from: .one))
+	}
 	
 //	func testCanProvideCommonSSHURLStyleWithHyphen() throws {
 //		let uri = "git@github.com:MariusCiocanel/swift-sh.git"
