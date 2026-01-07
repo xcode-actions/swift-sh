@@ -98,7 +98,8 @@ extension ImportSpecification {
 			if (try? #/(^|;)(\s*@testable)?\s*import(\s+(class|enum|struct))?\s+SwiftSH_Helpers(\.[^\s]+)?/#.firstMatch(in: line)) != nil {
 				self.moduleName = "SwiftSH_Helpers"
 				self.moduleSource = .github(user: "xcode-actions", repo: "swift-sh")
-				/* The Version init should never fail but we fallback to .latest if it were to fail… */
+				/* The Version init should never fail but we fallback to .latest if it were to fail…
+				 * TODO: We should be able to specify _which_ version of the helpers we want! */
 				self.constraint = Version(SwiftSH.configuration.version).flatMap{ .exact($0) } ?? .latest
 				return
 			}
