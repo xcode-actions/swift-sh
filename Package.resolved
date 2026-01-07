@@ -1,5 +1,5 @@
 {
-  "originHash" : "cdffa1ae9d93427032f9c9b896624b449fc0fa2b0b3f0d375e4f1da9ac136129",
+  "originHash" : "0e19f843042276fcf7bb99bbd75adcbd8a992395294b68e08cb01c5da34d4098",
   "pins" : [
     {
       "identity" : "clt-logger",
@@ -60,8 +60,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/apple/swift-log.git",
       "state" : {
-        "revision" : "e97a6fcb1ab07462881ac165fdbb37f067e205d5",
-        "version" : "1.5.4"
+        "revision" : "bc386b95f2a16ccd0150a8235e7c69eab2b866ca",
+        "version" : "1.8.0"
       }
     },
     {
