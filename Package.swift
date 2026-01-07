@@ -53,7 +53,9 @@ let package = Package(
 			.product(name: "XDG",               package: "swift-xdg"),
 		], swiftSettings: noSwiftSettings),
 		.testTarget(name: "swift-shTests", dependencies: [
-			.target(name: "swift-sh")
+			.target(name: "swift-sh"),
+			.product(name: "Logging",       package: "swift-log"),
+			.product(name: "SystemPackage", package: "swift-system"),
 		], path: "Tests", exclude: ["Legacy"], swiftSettings: noSwiftSettings),
 	]
 )
