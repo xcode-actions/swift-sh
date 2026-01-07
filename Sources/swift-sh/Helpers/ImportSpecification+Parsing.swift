@@ -102,7 +102,7 @@ extension ImportSpecification {
 				self.constraint = Version(SwiftSH.configuration.version).flatMap{ .exact($0) } ?? .latest
 				return
 			}
-			if (try? #/^(\s*@testable)?\s*import(\s+(class|enum|struct))?\s+[\w_]+(\.[^\s]+)?\s+(//|/*)/#.firstMatch(in: line)) != nil {
+			if (try? #/^(\s*@testable\s)?\s*import(\s+(class|enum|struct))?\s+[\w_]+(\.[^\s]+)?\s+(//|/*)/#.firstMatch(in: line)) != nil {
 				logger.notice("Found a line starting with import followed by a comment that failed to match an import spec.", metadata: ["line": "\(line)"])
 			}
 			return nil
