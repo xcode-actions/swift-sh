@@ -84,4 +84,5 @@ public func changeCurrentDirectoryPath(_ pathBase: PathBase? = nil, _ relativePa
 }
 
 
+/* For testing setting the current directory path from git repo root. */
 internal nonisolated(unsafe) var isBeingTested: Bool = false
