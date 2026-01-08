@@ -33,7 +33,11 @@ public func changeCurrentDirectoryPath(_ pathBase: PathBase? = nil, _ relativePa
 			case .scriptRepoRoot?:
 				var errOutput = ""
 				var repoRootResult: Result<String, Error>?
-				let pi = ProcessInvocation("git", "rev-parse", "--show-toplevel", workingDirectory: !isBeingTested ? scriptFolderURL : URL(filePath: #filePath).deletingLastPathComponent())
+				let pi = ProcessInvocation(
+					"git", "rev-parse", "--show-toplevel",
+					workingDirectory: !isBeingTested ? scriptFolderURL : URL(filePath: #filePath).deletingLastPathComponent(),
+					stdinRedirect: .none(setFgPgID: false)
+				)
 				let (process, dispatchGroup) = try pi.invoke{ result, signalEndOfInterestForStream, process in
 					do {
 						let lineWithSource = try result.get()
