@@ -52,8 +52,11 @@ let package = Package(
 			.product(name: "UnwrapOrThrow",     package: "UnwrapOrThrow"),
 			.product(name: "XDG",               package: "swift-xdg"),
 		], swiftSettings: noSwiftSettings),
-		.testTarget(name: "swift-shTests", dependencies: [
+		
+		/* We do only one target to test swift-sh and its helpers, for simplicity. */
+		.testTarget(name: "SwiftSHTests", dependencies: [
 			.target(name: "swift-sh"),
+			.target(name: "SwiftSH_Helpers"),
 			.product(name: "Logging",       package: "swift-log"),
 			.product(name: "SystemPackage", package: "swift-system"),
 		], path: "Tests", exclude: ["Legacy"], swiftSettings: noSwiftSettings),

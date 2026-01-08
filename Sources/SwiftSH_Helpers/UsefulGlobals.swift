@@ -33,7 +33,7 @@ public func changeCurrentDirectoryPath(_ pathBase: PathBase? = nil, _ relativePa
 			case .scriptRepoRoot?:
 				var errOutput = ""
 				var repoRootResult: Result<String, Error>?
-				let pi = ProcessInvocation("git", "rev-parse", "--show-toplevel", workingDirectory: scriptFolderURL)
+				let pi = ProcessInvocation("git", "rev-parse", "--show-toplevel", workingDirectory: !isBeingTested ? scriptFolderURL : URL(filePath: #filePath).deletingLastPathComponent())
 				let (process, dispatchGroup) = try pi.invoke{ result, signalEndOfInterestForStream, process in
 					do {
 						let lineWithSource = try result.get()
@@ -78,3 +78,6 @@ public func changeCurrentDirectoryPath(_ pathBase: PathBase? = nil, _ relativePa
 		throw MessageError("Failed setting current directory path to \(newPath.string).")
 	}
 }
+
+
+internal nonisolated(unsafe) var isBeingTested: Bool = false
