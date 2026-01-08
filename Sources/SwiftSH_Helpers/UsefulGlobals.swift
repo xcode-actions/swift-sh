@@ -60,6 +60,8 @@ public func changeCurrentDirectoryPath(_ pathBase: PathBase? = nil, _ relativePa
 					}
 				}
 				process.waitUntilExit()
+				/* TODO: We can have a priority inversion here because the QoS of the queue we’re waiting on is lower than user-initiated.
+				 * Fix should probably be to run the queue at user-initiated level and potentially allow clients to set the QoS. */
 				dispatchGroup.wait()
 				
 				let (exitStatus, exitReason) = (process.terminationStatus, process.terminationReason)
