@@ -1,5 +1,6 @@
 @_exported import ArgumentParser
 @_exported import CLTLogger
+@_exported import InlineObjectConfig
 @_exported import Logging
 @_exported import ProcessInvocation
 @_exported import StreamReader

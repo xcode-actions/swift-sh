@@ -1,5 +1,5 @@
 {
-  "originHash" : "0e19f843042276fcf7bb99bbd75adcbd8a992395294b68e08cb01c5da34d4098",
+  "originHash" : "63709f8db2143fada15ef3bc572def730a0de5867cf93ab65c02be7485b5a5db",
   "pins" : [
     {
       "identity" : "clt-logger",
@@ -17,6 +17,15 @@
       "state" : {
         "revision" : "6df281911c5bb6095a7988e3b60986ef91536ec3",
         "version" : "2.0.0"
+      }
+    },
+    {
+      "identity" : "inlineobjectconfig",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/Frizlab/InlineObjectConfig.git",
+      "state" : {
+        "revision" : "9a322945ca6325f5b9886439821f4ef16433ffc6",
+        "version" : "1.0.0"
       }
     },
     {
