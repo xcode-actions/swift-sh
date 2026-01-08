@@ -10,7 +10,7 @@ struct SwiftSH : AsyncParsableCommand {
 	
 	static let configuration: CommandConfiguration = .init(
 		commandName: "swift sh",
-		version: "3.3.0", /* TODO: Find a way to automatically update this when creating new versions… */
+		version: "dev", /* DO NOT REMOVE: VERSION_PLACEHOLDER. This tag is used to automatically replace the version when building in Homebrew. */
 		subcommands: [
 			Build.self,
 			Eject.self,
