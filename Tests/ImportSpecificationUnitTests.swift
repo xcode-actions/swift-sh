@@ -50,24 +50,10 @@ struct ImportSpecificationUnitTests {
 	
 	@Test
 	func testMinimalSpaces() throws {
-		/* Note: Upstream project allowed no spaces before the `~>`; we do not.
-		 * The rationale being that it allows us to support the (excessively unlikely) case of a path containing a `==` or a `~>`.
-		 * (And that I initially did the regex with the space assumption and I do not want to change that haha.)
-		 * With our parsing, the only path that cannot be represented is one that contains a space.
-		 * Eventually we should also be able to support that case, but there’s no rush for that. */
-		let parsed = try #require(ImportSpecification(line: "import Foo//@mxcl ~>1.0", scriptFolder: cwdPath, fileManager: fileManager, logger: logger))
+		let parsed = try #require(ImportSpecification(line: "import Foo//@mxcl~>1.0", scriptFolder: cwdPath, fileManager: fileManager, logger: logger))
 		#expect(parsed.moduleName == "Foo")
 		#expect(parsed.moduleSource == .github(user: "mxcl", repo: nil))
 		#expect(parsed.constraint == .upToNextMajor(from: .one))
-	}
-	
-	@Test
-	func testNoSpaces() throws {
-		/* Note: See previous test for more info. */
-		let parsed = try #require(ImportSpecification(line: "import Foo//@mxcl~>1.0", scriptFolder: cwdPath, fileManager: fileManager, logger: logger))
-		#expect(parsed.moduleName == "Foo")
-		#expect(parsed.moduleSource == .local("@mxcl~>1.0", scriptFolder: cwdPath))
-		#expect(parsed.constraint == .latest)
 	}
 	
 	@Test
@@ -199,7 +185,7 @@ struct ImportSpecificationUnitTests {
 		//try fileManager.createDirectory(at: URL(filePath: tmpPath.string, directoryHint: .isDirectory), withIntermediateDirectories: true)
 		let parsed = try #require(ImportSpecification(line: "import Bar  // /tmp/fake/with space/last", scriptFolder: tmpPath, fileManager: fileManager, logger: logger))
 		#expect(parsed.moduleName == "Bar")
-		#expect(parsed.moduleSource == .local(tmpPath, scriptFolder: tmpPath))
+		#expect(parsed.moduleSource == .local(tmpPath.lexicallyNormalized(), scriptFolder: tmpPath))
 		#expect(parsed.packageDependencyLine(useSSHForGithubDependencies: false) == #".package(path: "\#(tmpPath.lexicallyNormalized().string)")"#)
 	}
 	
@@ -211,7 +197,7 @@ struct ImportSpecificationUnitTests {
 		//try fileManager.createDirectory(at: URL(filePath: tmpPath.string, directoryHint: .isDirectory), withIntermediateDirectories: true)
 		let parsed = try #require(ImportSpecification(line: "import Bar  // /tmp/fake/with space/last", scriptFolder: tmpPath, fileManager: fileManager, logger: logger))
 		#expect(parsed.moduleName == "Bar")
-		#expect(parsed.moduleSource == .local(tmpPath, scriptFolder: tmpPath))
+		#expect(parsed.moduleSource == .local(tmpPath.lexicallyNormalized(), scriptFolder: tmpPath))
 		#expect(parsed.packageDependencyLine(useSSHForGithubDependencies: false) == #".package(path: "\#(tmpPath.lexicallyNormalized().string)")"#)
 	}
 	

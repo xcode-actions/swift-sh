@@ -19,168 +19,170 @@ extension ImportSpecification {
 		}
 		
 		/* Some conveniences. */
-		let whitespace = OneOrMore{ .horizontalWhitespace }
-		let maybeWhitespace = ZeroOrMore{ .horizontalWhitespace }
-		
-		/* References we will use in the regex. */
-		let moduleNameRef = Reference(Substring.self)
-		let moduleOriginRef = Reference(ModuleSource.self)
-		let constraintTypeRef = Reference(ConstraintType?.self)
-		let constraintValueRef = Reference(String?.self)
-		let slashStarCommentContentRef = Reference(String?.self)
-		let doubleSlashCommentContentRef = Reference(String?.self)
-		
-		/* Sub-regexes. */
-		let moduleOriginRegex = Regex{
-			Capture(as: moduleOriginRef){
-				OneOrMore{ .whitespace.inverted }
-			}transform:{ substr in try ModuleSource(String(substr), scriptFolder: scriptFolder, fileManager: fm, logger: logger) ?! DummyError() }
-		}
-		let constraintRegex = Regex{
-			Capture(as: constraintTypeRef){
-				ChoiceOf{
-					ConstraintType.exact.rawValue
-					ConstraintType.upToNextMajor.rawValue
-				}
-			}transform:{ substr in ConstraintType(rawValue: String(substr))! }
-			maybeWhitespace
-			Capture(as: constraintValueRef){
-				OneOrMore{ .whitespace.inverted }
-			}transform:{ substr in String(substr) }
-		}
-		/* This one is only for the special SwiftSH_Helpers w/ only the constraint specified in the comment. */
-		let constraintCommentRegex = Regex{
-			ChoiceOf{
-				Regex{
-					"/*"
-					maybeWhitespace
-					Capture(constraintRegex, as: slashStarCommentContentRef, transform: { String($0) })
-					maybeWhitespace
-					"*/"
-				}
-				Regex{
-					"//"
-					maybeWhitespace
-					Capture(constraintRegex, as: doubleSlashCommentContentRef, transform: { String($0) })
-					maybeWhitespace
-					Anchor.endOfLine
-				}
-			}
-		}
-		let moduleOriginAndConstraintsRegex = Regex{
-			maybeWhitespace
-			moduleOriginRegex
-			maybeWhitespace
-			Optionally{
-				constraintRegex
-			}
-			maybeWhitespace
-		}
-		
-		/* Finally, the full regex. */
-		let fullRegex = Regex{
-			Anchor.startOfLine
-			maybeWhitespace
-			Optionally{ "@testable"; whitespace }
-			"import"; whitespace
-			Optionally{ ChoiceOf{ "class"; "enum"; "struct"; "protocol"; "typealias"; "func"; "let"; "var" }; whitespace }
-			
-			Capture(as: moduleNameRef){ OneOrMore{ ChoiceOf{ .word; "_" } } }
-			/* Theoretically this part is only possible (and must be there) if the class/enum/struct modifier is present.
-			 * To simplify, we’ll allow it always. */
-			Optionally{
-				"."; OneOrMore{ .whitespace.inverted }
-			}
-			
-			maybeWhitespace
-			ChoiceOf{
-				Regex{
-					"/*"
-					Capture(moduleOriginAndConstraintsRegex, as: slashStarCommentContentRef, transform: { String($0) })
-					"*/"
-				}
-				Regex{
-					"//"
-					Capture(moduleOriginAndConstraintsRegex, as: doubleSlashCommentContentRef, transform: { String($0) })
-					maybeWhitespace
-					Anchor.endOfLine
-				}
-			}
-		}
+		let blessedImport = "SwiftSH_Helpers"
+		let whitespaces = OneOrMore{ .horizontalWhitespace }
+		let maybeWhitespaces = ZeroOrMore{ .horizontalWhitespace }
+		let importSpecifier = ChoiceOf{ "class"; "enum"; "struct"; "protocol"; "typealias"; "func"; "let"; "var" }
 		
 		/* Convenience function to convert a constraint match to a constraint. */
-		func constraintFrom(constraintType: ConstraintType?, constraintValue: String?) -> Constraint? {
-			if let constraintType, let constraintValue {
-				if let constraintVersion = Version(tolerant: constraintValue) {
-					switch constraintType {
-						case .exact:         return .exact(constraintVersion)
-						case .upToNextMajor: return .upToNextMajor(from: constraintVersion)
-					}
-				} else {
-					guard constraintType == .exact else {
-						logger.warning("Invalid constraint found with a non-exact type but a non-compliant version.", metadata: [
-							"line": "\(line)",
-							"constraint-type": "\(constraintType)",
-							"constraint-value": "\(constraintValue)"
-						])
-						return nil
-					}
-					return .ref(constraintValue)
+		func constraintFrom(constraintType: ConstraintType, constraintValue: String) -> Constraint? {
+			if let constraintVersion = Version(tolerant: constraintValue) {
+				switch constraintType {
+					case .exact:         return .exact(constraintVersion)
+					case .upToNextMajor: return .upToNextMajor(from: constraintVersion)
 				}
 			} else {
-				return .latest
-			}
-		}
-		
-		/* Let’s try and match this.
-		 * We do a double-pass match because it is clearer than having two variables for the module origin, constraint type and constraint value.
-		 * Instead we have two variables for the full “module origin and constraints” match, which we re-match later.
-		 * Indeed this is not efficient, but it is efficient _enough_. */
-		guard let match1 = try? fullRegex.firstMatch(in: line) else {
-			/* If the match failed, we check the special case of the import of SwiftSH_Helpers.
-			 * This package does not need to have an import specification: we _know_ them already.
-			 * The regex is not perfect (it’s a regex), but it’ll do for our use case. */
-			if let match = (try? #/(^|;)(\s*@testable)?\s*import(\s+(class|enum|struct|protocol|typealias|func|let|var))?\s+SwiftSH_Helpers(\.[^\s]+)?\s*/#.firstMatch(in: line)) {
-				self.moduleName = "SwiftSH_Helpers"
-				self.moduleSource = .github(user: "xcode-actions", repo: "swift-sh")
-				
-				let lineMinusImport = String(line[match.range.upperBound...])
-				/* Let’s see if we can parse a version spec in the rest of the line. */
-				if let commentContentMatch = (try? constraintCommentRegex.firstMatch(in: lineMinusImport)) {
-					/* Exactly one of the two reference must have matched. */
-					assert((commentContentMatch[slashStarCommentContentRef] == nil) != (commentContentMatch[doubleSlashCommentContentRef] == nil))
-					/* Let’s match the comment content to the constraint. */
-					let constraintMatch = try! constraintRegex.wholeMatch(in: (commentContentMatch[slashStarCommentContentRef] ?? commentContentMatch[doubleSlashCommentContentRef])!)!
-					guard let constraint = constraintFrom(constraintType: constraintMatch[constraintTypeRef], constraintValue: constraintMatch[constraintValueRef]) else {
-						return nil
-					}
-					self.constraint = constraint
-				} else {
-					/* The Version init should never fail but we fallback to .latest if it were to fail… */
-					self.constraint = Version(SwiftSH.configuration.version).flatMap{ .exact($0) } ?? .latest
+				guard constraintType == .exact else {
+					logger.warning("Invalid constraint found with a non-exact type but a non-compliant version.", metadata: [
+						"line": "\(line)",
+						"constraint-type": "\(constraintType)",
+						"constraint-value": "\(constraintValue)"
+					])
+					return nil
 				}
-				return
+				return .ref(constraintValue)
 			}
-			if (try? #/^(\s*@testable\s)?\s*import(\s+(class|enum|struct|protocol|typealias|func|let|var))?\s+[\w_]+(\.[^\s]+)?\s+(//|/*)/#.firstMatch(in: line)) != nil {
-				logger.notice("Found a line starting with import followed by a comment that failed to match an import spec.", metadata: ["line": "\(line)"])
+		}
+		
+		/* First let’s parse the import line with a comment next to it. */
+		let moduleAndComment: (String, String?)? = {
+			let moduleNameRef = Reference(Substring.self)
+			let starCommentContentRef = Reference(String?.self)
+			let doubleSlashCommentContentRef = Reference(String?.self)
+			let regex = Regex{
+				Anchor.startOfLine
+				maybeWhitespaces
+				Optionally{ "@testable"; whitespaces }
+				"import"; whitespaces
+				Optionally{ importSpecifier; whitespaces }
+				
+				Capture(as: moduleNameRef){ OneOrMore(.reluctant){ .any }; Lookahead{ ChoiceOf{ "."; "/"; .horizontalWhitespace; Anchor.endOfLine } } }
+				/* Theoretically this part is only possible (and must be there) if the import specifier (class, enum, etc.) is present.
+				 * To simplify, we’ll allow it always. */
+				Optionally{
+					"."; OneOrMore{ .whitespace.inverted }
+				}
+				
+				maybeWhitespaces
+				Optionally{
+					ChoiceOf{
+						Regex{
+							"/*"
+							maybeWhitespaces
+							Capture(OneOrMore(.reluctant){ .any }, as: starCommentContentRef, transform: { String($0) })
+							maybeWhitespaces
+							"*/"
+						}
+						Regex{
+							"//"
+							maybeWhitespaces
+							Capture(OneOrMore(.reluctant){ .any }, as: doubleSlashCommentContentRef, transform: { String($0) })
+							maybeWhitespaces
+							Anchor.endOfLine
+						}
+					}
+				}
 			}
+			/* Note: Not whole match because star comments can not match to the end of the line.
+			 * Basically we ignore everything after the star comments. */
+			guard let match = try? regex.firstMatch(in: line) else {
+				return nil
+			}
+			
+			let moduleName = String(match[moduleNameRef])
+			
+			let hasStarComment = (match[starCommentContentRef] != nil)
+			let hasDoubleSlashComment = (match[doubleSlashCommentContentRef] != nil)
+			guard hasStarComment || hasDoubleSlashComment else {
+				return (moduleName, nil)
+			}
+			
+			/* Exactly one of the two references must have matched. */
+			assert(hasStarComment != hasDoubleSlashComment)
+			return (moduleName, match[starCommentContentRef] ?? match[doubleSlashCommentContentRef]!)
+		}()
+		guard let (moduleName, commentContent) = moduleAndComment else {
 			return nil
 		}
-		/* Exactly one of the two reference must have matched. */
-		assert((match1[slashStarCommentContentRef] == nil) != (match1[doubleSlashCommentContentRef] == nil))
-		let moduleOriginAndConstraints = (match1[slashStarCommentContentRef] ?? match1[doubleSlashCommentContentRef])!
 		
-		/* Now let’s match the moduleOriginAndConstraints against its regex. */
-		let match2 = try! moduleOriginAndConstraintsRegex.wholeMatch(in: moduleOriginAndConstraints)!
-		/* If the type matched, the value must have, and vice-versa. */
-		assert((match2[constraintTypeRef] == nil) == (match2[constraintValueRef] == nil))
+		guard let commentContent else {
+			/* If there are no comments, the only thing that we will still report as an import spec is the import of the helpers. */
+			guard moduleName == blessedImport else {
+				return nil
+			}
+			self = .init(
+				moduleName: blessedImport,
+				moduleSource: .github(user: "xcode-actions", repo: "swift-sh"),
+				/* The Version init will fail in builds where the version has not been properly set in the SwiftSH struct. */
+				constraint: Version(SwiftSH.configuration.version).flatMap{ .exact($0) } ?? .latest
+			)
+			return
+		}
 		
-		self.moduleName = String(match1[moduleNameRef])
-		self.moduleSource = match2[moduleOriginRef]
-		guard let constraint = constraintFrom(constraintType: match2[constraintTypeRef], constraintValue: match2[constraintValueRef]) else {
+		/* Now parse the comment content. */
+		let moduleSourceStrAndConstraint: (String?, Constraint?)? = {
+			let moduleSourceRef = Reference(String?.self)
+			let constraintTypeRef = Reference(ConstraintType?.self)
+			let constraintValueRef = Reference(String?.self)
+			let regex = Regex{
+				Optionally(.reluctant){
+					Capture(as: moduleSourceRef){ OneOrMore(.reluctant){ .any } }transform:{ String($0) }
+				}
+				maybeWhitespaces
+				Optionally{
+					Capture(as: constraintTypeRef){
+						ChoiceOf{
+							ConstraintType.exact.rawValue
+							ConstraintType.upToNextMajor.rawValue
+						}
+					}transform:{ substr in ConstraintType(rawValue: String(substr))! }
+					maybeWhitespaces
+					Capture(as: constraintValueRef){ OneOrMore{ .any } }transform:{ String($0) }
+				}
+			}
+			guard let match = try? regex.wholeMatch(in: commentContent) else {
+				return nil
+			}
+			
+			let moduleSource = match[moduleSourceRef]
+			
+			/* Either both refs should have matched, or none of them. */
+			assert((match[constraintTypeRef] == nil) == (match[constraintValueRef] == nil))
+			guard let constraintType  = match[constraintTypeRef],
+					let constraintValue = match[constraintValueRef]
+			else {
+				guard let moduleSource else {
+					return nil
+				}
+				return (moduleSource, nil)
+			}
+			guard let constraint = constraintFrom(constraintType: constraintType, constraintValue: constraintValue) else {
+				return nil
+			}
+			return (moduleSource, constraint)
+		}()
+		guard let (moduleSourceStr, constraint) = moduleSourceStrAndConstraint else {
 			return nil
 		}
-		self.constraint = constraint
+		
+		guard let moduleSourceStr else {
+			/* The only case where module origin can be nil is for SwiftSH_Helpers, because we _know_ its origin. */
+			guard moduleName == blessedImport else {
+				return nil
+			}
+			self = .init(
+				moduleName: blessedImport,
+				moduleSource: .github(user: "xcode-actions", repo: "swift-sh"),
+				constraint: constraint ?? .latest /* We play it safe, but constraint cannot be nil here theoretically. */
+			)
+			return
+		}
+		
+		guard let moduleSource = ModuleSource(moduleSourceStr, scriptFolder: scriptFolder, fileManager: fm, logger: logger) else {
+			return nil
+		}
+		
+		self = .init(moduleName: moduleName, moduleSource: moduleSource, constraint: constraint ?? .latest)
 	}
 	
 }
@@ -265,7 +267,7 @@ extension ImportSpecification.ModuleSource {
 				let home: FilePath
 				if let username = match[usernameRef] {
 					guard let homeDir = fm.homeDirectory(forUser: username) else {
-						logger.warning("Cannot get home directory for user.", metadata: ["username": "\(username)"])
+						logger.info("Cannot get home directory for user; dropping import spec.", metadata: ["username": "\(username)"])
 						return nil
 					}
 					home = FilePath(homeDir.path)
