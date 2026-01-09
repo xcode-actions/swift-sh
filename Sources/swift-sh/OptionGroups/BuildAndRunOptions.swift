@@ -72,10 +72,10 @@ final class BuildAndRunOptions : ParsableArguments {
 				return ([String](), nil)
 			}
 			/* Retrieve the REPL invocation in package folder path.
-			 * Note: This is not protected in regard to multiple scripts trying to use the same store entry.
-			 * TODO: Make the REPL invocation retrieval concurrent-safe, or at least concurrent-protected. */
+			 * Note: This is not protected with regard to multiple scripts trying to use the same store entry.
+			 * TODO: Make the REPL invocation retrieval concurrent-safe. */
 			let packageFolderRelativePath = FilePath("store").appending(depsPackage.packageHash.reduce("", { $0 + String(format: "%02x", $1) }))
-			let packageFolderPath = try FilePath(xdgDirs.ensureCacheDirPath(.init(packageFolderRelativePath.string)).string)
+			let packageFolderPath = try xdgDirs.ensureCacheDirPath(packageFolderRelativePath)
 			let ret = try await depsPackage.retrieveREPLInvocation(
 				packageFolder: packageFolderPath,
 				buildDependenciesInReleaseMode: buildDependenciesInReleaseMode,
@@ -88,7 +88,7 @@ final class BuildAndRunOptions : ParsableArguments {
 			let packageFolderAliasDiscriminator = Insecure.MD5
 				.hash(data: scriptData?.hash ?? Data(scriptPathForSwift.utf8))
 				.reduce("", { $0 + String(format: "%02x", $1) })
-			let markersFolderPath = try FilePath(xdgDirs.ensureCacheDirPath(.init("markers")).string)
+			let markersFolderPath = try xdgDirs.ensureCacheDirPath("markers")
 			let packageFolderAliasPath = markersFolderPath.appending("\(scriptSource.scriptName)--\(packageFolderAliasDiscriminator)")
 			do {
 				try? fm.removeItem(at: packageFolderAliasPath.url)

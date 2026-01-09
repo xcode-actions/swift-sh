@@ -2,9 +2,7 @@
 import PackageDescription
 
 
-/* ⚠️ Do not use the concurrency check flags in a release! */
-let          noSwiftSettings: [SwiftSetting] = []
-//let concurrencySwiftSettings: [SwiftSetting] = [.unsafeFlags(["-Xfrontend", "-warn-concurrency", "-Xfrontend", "-enable-actor-data-race-checks"])]
+let commonSwiftSettings: [SwiftSetting] = []
 
 let package = Package(
 	name: "swift-sh",
@@ -21,7 +19,7 @@ let package = Package(
 		.package(url: "https://github.com/apple/swift-log.git",                        from: "1.8.0"),
 		.package(url: "https://github.com/apple/swift-system.git",                     from: "1.0.0"), /* We’re aware of the existence of System on macOS. After some thinking/research, we decided to agree with <https://forums.swift.org/t/50719/5>. */
 		.package(url: "https://github.com/Frizlab/InlineObjectConfig.git",             from: "1.0.0"),
-		.package(url: "https://github.com/Frizlab/swift-xdg.git",                      from: "1.0.0"),
+		.package(url: "https://github.com/Frizlab/swift-xdg.git",                      from: "2.0.0"),
 		.package(url: "https://github.com/Frizlab/UnwrapOrThrow.git",                  from: "1.1.0"),
 		.package(url: "https://github.com/mxcl/LegibleError.git",                      from: "1.0.0"),
 		.package(url: "https://github.com/mxcl/Version.git",                           from: "2.0.0"),
@@ -42,7 +40,7 @@ let package = Package(
 			.product(name: "UnwrapOrThrow",     package: "UnwrapOrThrow"),
 			.product(name: "Version",           package: "Version"),
 			.product(name: "XDG",               package: "swift-xdg"),
-		], exclude: ["Legacy"], swiftSettings: noSwiftSettings),
+		], exclude: ["Legacy"], swiftSettings: commonSwiftSettings),
 		.target(name: "SwiftSH_Helpers", dependencies: [
 			.product(name: "ArgumentParser",     package: "swift-argument-parser"),
 			.product(name: "CLTLogger",          package: "clt-logger"),
@@ -53,7 +51,7 @@ let package = Package(
 			.product(name: "SystemPackage",      package: "swift-system"),
 			.product(name: "UnwrapOrThrow",      package: "UnwrapOrThrow"),
 			.product(name: "XDG",                package: "swift-xdg"),
-		], swiftSettings: noSwiftSettings),
+		], swiftSettings: commonSwiftSettings),
 		
 		/* We do only one target to test swift-sh and its helpers, for simplicity. */
 		.testTarget(name: "SwiftSHTests", dependencies: [
@@ -61,6 +59,6 @@ let package = Package(
 			.target(name: "SwiftSH_Helpers"),
 			.product(name: "Logging",       package: "swift-log"),
 			.product(name: "SystemPackage", package: "swift-system"),
-		], path: "Tests", exclude: ["Legacy"], swiftSettings: noSwiftSettings),
+		], path: "Tests", exclude: ["Legacy"], swiftSettings: commonSwiftSettings),
 	]
 )

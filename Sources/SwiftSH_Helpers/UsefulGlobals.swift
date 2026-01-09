@@ -6,8 +6,6 @@ import UnwrapOrThrow
 
 
 
-public let fm = FileManager.default
-
 /* The path to the script.
  * We assume arguments has its first argument properly set to the script’s path. */
 public let scriptPath: FilePath = .init(CommandLine.arguments[0])
@@ -80,7 +78,7 @@ public func changeCurrentDirectoryPath(_ pathBase: PathBase? = nil, _ relativePa
 		if let relativePath {pathBase.pushing(relativePath)}
 		else                {pathBase}
 	
-	guard fm.changeCurrentDirectoryPath(newPath.string) else {
+	guard FileManager.default.changeCurrentDirectoryPath(newPath.string) else {
 		throw MessageError("Failed setting current directory path to \(newPath.string).")
 	}
 }
