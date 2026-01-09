@@ -73,9 +73,22 @@ struct ScriptSource {
 			return (true, false)
 		}
 		
-		/* Let’s detect non-replayable content. */
-		let resources = try URL(filePath: path.string).resourceValues(forKeys: [.isRegularFileKey])
-		let isRegularFile = try resources.isRegularFile ?! InternalError(message: "Cannot get input file info.")
+		/* Let’s detect non-replayable content.
+		 *
+		 * A note about resolvingSymlinksInPath: it will drop the `/private` from the resolved link, if any, and if the result is an existing file.
+		 * For instance, if the path is `/tmp`, which is a link to `/private/tmp`, the resulting path will still be `/tmp`.
+		 * In practice that means that we won’t detect a directory was given in input if the input is `/tmp`, `/var`, etc.
+		 * Does it matter? I think not.
+		 * (We will still fail later, just with a more cryptic error.) */
+		let resources = try URL(filePath: path.string).resolvingSymlinksInPath().resourceValues(forKeys: [.isRegularFileKey, .isDirectoryKey])
+		guard !(try resources.isDirectory ?! InternalError(message: "Cannot get input file directory info.")) else {
+			struct InputIsDir : Error, CustomStringConvertible {
+				var description: String {"Input file is a directory."}
+			}
+			throw InputIsDir()
+		}
+		
+		let isRegularFile = try resources.isRegularFile ?! InternalError(message: "Cannot get input file regular file info.")
 		return (false, isRegularFile)
 	}
 	
