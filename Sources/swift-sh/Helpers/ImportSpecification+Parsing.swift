@@ -83,7 +83,7 @@ extension ImportSpecification {
 			maybeWhitespace
 			Optionally{ "@testable"; whitespace }
 			"import"; whitespace
-			Optionally{ ChoiceOf{ "class"; "enum"; "struct" }; whitespace }
+			Optionally{ ChoiceOf{ "class"; "enum"; "struct"; "protocol"; "typealias"; "func"; "let"; "var" }; whitespace }
 			
 			Capture(as: moduleNameRef){ OneOrMore{ ChoiceOf{ .word; "_" } } }
 			/* Theoretically this part is only possible (and must be there) if the class/enum/struct modifier is present.
@@ -140,7 +140,7 @@ extension ImportSpecification {
 			/* If the match failed, we check the special case of the import of SwiftSH_Helpers.
 			 * This package does not need to have an import specification: we _know_ them already.
 			 * The regex is not perfect (it’s a regex), but it’ll do for our use case. */
-			if let match = (try? #/(^|;)(\s*@testable)?\s*import(\s+(class|enum|struct))?\s+SwiftSH_Helpers(\.[^\s]+)?\s*/#.firstMatch(in: line)) {
+			if let match = (try? #/(^|;)(\s*@testable)?\s*import(\s+(class|enum|struct|protocol|typealias|func|let|var))?\s+SwiftSH_Helpers(\.[^\s]+)?\s*/#.firstMatch(in: line)) {
 				self.moduleName = "SwiftSH_Helpers"
 				self.moduleSource = .github(user: "xcode-actions", repo: "swift-sh")
 				
@@ -161,7 +161,7 @@ extension ImportSpecification {
 				}
 				return
 			}
-			if (try? #/^(\s*@testable\s)?\s*import(\s+(class|enum|struct))?\s+[\w_]+(\.[^\s]+)?\s+(//|/*)/#.firstMatch(in: line)) != nil {
+			if (try? #/^(\s*@testable\s)?\s*import(\s+(class|enum|struct|protocol|typealias|func|let|var))?\s+[\w_]+(\.[^\s]+)?\s+(//|/*)/#.firstMatch(in: line)) != nil {
 				logger.notice("Found a line starting with import followed by a comment that failed to match an import spec.", metadata: ["line": "\(line)"])
 			}
 			return nil
