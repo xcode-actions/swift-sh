@@ -127,75 +127,93 @@ struct ImportSpecificationUnitTests {
 		#expect(parsed.packageDependencyLine(useSSHForGithubDependencies: false) == #".package(path: "\#(homePath.string)/.")"#)
 	}
 	
-//	func testCanProvideLocalRelativeParentPath() throws {
-//		let cwdParent = Path.cwd/"../"
-//		let b = try parse("import Bar  // ../", from: .path(Path.cwd.join("script.swift")))
-//		XCTAssertEqual(b?.dependencyName, .local(cwdParent))
-//		XCTAssertEqual(b?.importName, "Bar")
-//		XCTAssertEqual(b?.packageLine, ".package(path: \"\(cwdParent.string)\")")
-//	}
+	@Test
+	func testCanProvideLocalRelativeParentPath() throws {
+		let cwdParent = cwdPath.appending("..")
+		let parsed = try #require(ImportSpecification(line: "import Bar  // ../", scriptFolder: cwdPath, fileManager: fileManager, logger: logger))
+		#expect(parsed.moduleName == "Bar")
+		#expect(parsed.moduleSource == .local("..", scriptFolder: cwdPath))
+		#expect(parsed.packageDependencyLine(useSSHForGithubDependencies: false) == #".package(path: "\#(cwdParent.string)")"#)
+	}
 	
-//	func testCanProvideLocalRelativeTwoParentsUpPath() throws {
-//		let cwdParent = Path.cwd/"../../"
-//		let b = try parse("import Bar  // ../../", from: .path(Path.cwd.join("script.swift")))
-//		XCTAssertEqual(b?.dependencyName, .local(cwdParent))
-//		XCTAssertEqual(b?.importName, "Bar")
-//		XCTAssertEqual(b?.packageLine, ".package(path: \"\(cwdParent.string)\")")
-//	}
+	@Test
+	func testCanProvideLocalRelativeTwoParentsUpPath() throws {
+		let cwdParent = cwdPath.appending("..").appending("..")
+		let parsed = try #require(ImportSpecification(line: "import Bar  // ../../", scriptFolder: cwdPath, fileManager: fileManager, logger: logger))
+		#expect(parsed.moduleName == "Bar")
+		#expect(parsed.moduleSource == .local("../..", scriptFolder: cwdPath))
+		#expect(parsed.packageDependencyLine(useSSHForGithubDependencies: false) == #".package(path: "\#(cwdParent.string)")"#)
+	}
 	
-//	func testCanProvideLocalPathWithHypen() throws {
-//		let tmpPath = Path.root.tmp.fake/"with-hyphen-two"/"lastone"
-//		try tmpPath.mkdir(.p)
-//		let b = try parse("import Foo  // /tmp/fake/with-hyphen-two/lastone", from: .path(tmpPath.join("script.swift")))
-//		XCTAssertEqual(b?.dependencyName, .local(tmpPath))
-//		XCTAssertEqual(b?.importName, "Foo")
-//		XCTAssertEqual(b?.packageLine, ".package(path: \"\(tmpPath.string)\")")
-//	}
+	@Test
+	func testCanProvideLocalPathWithHypen() throws {
+		let tmpPath = FilePath("/tmp/fake/with-hyphen-two/lastone")
+		/* Original test created the directory, because it must have checked the dependency actually exists, but we do not (and IMHO should not). */
+		//try fileManager.createDirectory(at: URL(filePath: tmpPath.string, directoryHint: .isDirectory), withIntermediateDirectories: true)
+		let parsed = try #require(ImportSpecification(line: "import Foo  // /tmp/fake/with-hyphen-two/lastone", scriptFolder: tmpPath, fileManager: fileManager, logger: logger))
+		#expect(parsed.moduleName == "Foo")
+		#expect(parsed.moduleSource == .local(tmpPath, scriptFolder: tmpPath))
+		#expect(parsed.packageDependencyLine(useSSHForGithubDependencies: false) == #".package(path: "\#(tmpPath.string)")"#)
+	}
 	
-//	func testCanProvideLocalPathWithHyphenAndDotsAndSpacesOhMy() throws {
-//		let tmpPath = Path.root.tmp.fake/"with-hyphen.two.one-zero"/"last one"
-//		try tmpPath.mkdir(.p)
-//		let b = try parse("import Foo  // /tmp/fake/with-hyphen.two.one-zero/last one", from: .path(tmpPath.join("script.swift")))
-//		XCTAssertEqual(b?.dependencyName, .local(tmpPath))
-//		XCTAssertEqual(b?.importName, "Foo")
-//		XCTAssertEqual(b?.packageLine, ".package(path: \"\(tmpPath.string)\")")
-//	}
+	@Test
+	func testCanProvideLocalPathWithHyphenAndDotsAndSpacesOhMy() throws {
+		let tmpPath = FilePath("/tmp/fake/with-hyphen.two.one-zero/last one")
+		/* Original test created the directory, because it must have checked the dependency actually exists, but we do not (and IMHO should not). */
+		//try fileManager.createDirectory(at: URL(filePath: tmpPath.string, directoryHint: .isDirectory), withIntermediateDirectories: true)
+		let parsed = try #require(ImportSpecification(line: "import Foo  // /tmp/fake/with-hyphen.two.one-zero/last one", scriptFolder: tmpPath, fileManager: fileManager, logger: logger))
+		#expect(parsed.moduleName == "Foo")
+		#expect(parsed.moduleSource == .local(tmpPath, scriptFolder: tmpPath))
+		#expect(parsed.packageDependencyLine(useSSHForGithubDependencies: false) == #".package(path: "\#(tmpPath.string)")"#)
+	}
 	
-//	func testCanProvideLocalPathWithSpaces() throws {
-//		let tmpPath = Path.root.tmp.fake/"with space"/"last"
-//		try tmpPath.mkdir(.p)
-//		let b = try parse("import Bar  // /tmp/fake/with space/last", from: .path(tmpPath.join("script.swift")))
-//		XCTAssertEqual(b?.dependencyName, .local(tmpPath))
-//		XCTAssertEqual(b?.importName, "Bar")
-//		XCTAssertEqual(b?.packageLine, ".package(path: \"\(tmpPath.string)\")")
-//	}
+	@Test
+	func testCanProvideLocalPathWithSpaces() throws {
+		let tmpPath = FilePath("/tmp/fake/with space/last")
+		/* Original test created the directory, because it must have checked the dependency actually exists, but we do not (and IMHO should not). */
+		//try fileManager.createDirectory(at: URL(filePath: tmpPath.string, directoryHint: .isDirectory), withIntermediateDirectories: true)
+		let parsed = try #require(ImportSpecification(line: "import Bar  // /tmp/fake/with space/last", scriptFolder: tmpPath, fileManager: fileManager, logger: logger))
+		#expect(parsed.moduleName == "Bar")
+		#expect(parsed.moduleSource == .local(tmpPath, scriptFolder: tmpPath))
+		#expect(parsed.packageDependencyLine(useSSHForGithubDependencies: false) == #".package(path: "\#(tmpPath.string)")"#)
+	}
 	
-//	func testCanProvideLocalPathWithSpacesInLast() throws {
-//		let tmpPath = Path.root.tmp.fake/"with space"/"last one"
-//		try tmpPath.mkdir(.p)
-//		let b = try parse("import Foo  // /tmp/fake/with space/last one", from: .path(tmpPath.join("script.swift")))
-//		XCTAssertEqual(b?.dependencyName, .local(tmpPath))
-//		XCTAssertEqual(b?.importName, "Foo")
-//		XCTAssertEqual(b?.packageLine, ".package(path: \"\(tmpPath.string)\")")
-//	}
+	@Test
+	func testCanProvideLocalPathWithSpacesInLast() throws {
+		let tmpPath = FilePath("/tmp/fake/with space/last one")
+		/* Original test created the directory, because it must have checked the dependency actually exists, but we do not (and IMHO should not). */
+		//try fileManager.createDirectory(at: URL(filePath: tmpPath.string, directoryHint: .isDirectory), withIntermediateDirectories: true)
+		let parsed = try #require(ImportSpecification(line: "import Foo  // /tmp/fake/with space/last one", scriptFolder: tmpPath, fileManager: fileManager, logger: logger))
+		#expect(parsed.moduleName == "Foo")
+		#expect(parsed.moduleSource == .local(tmpPath, scriptFolder: tmpPath))
+		#expect(parsed.packageDependencyLine(useSSHForGithubDependencies: false) == #".package(path: "\#(tmpPath.string)")"#)
+	}
 	
-//	func testCanProvideLocalPathWithSpacesAndRelativeParentsUp() throws {
-//		let tmpPath = Path.root.tmp.fake.fakechild/".."/"with space"/"last"
-//		try tmpPath.mkdir(.p)
-//		let b = try parse("import Bar  // /tmp/fake/with space/last", from: .path(tmpPath.join("script.swift")))
-//		XCTAssertEqual(b?.dependencyName, .local(tmpPath))
-//		XCTAssertEqual(b?.importName, "Bar")
-//		XCTAssertEqual(b?.packageLine, ".package(path: \"\(tmpPath.string)\")")
-//	}
+	@Test
+	func testCanProvideLocalPathWithSpacesAndRelativeParentsUp() throws {
+		/* Note:
+		 * I don’t really understand what this test tests.
+		 * It seems more a test for Path (that we do not use anymore) rather than swift-sh (the path was lexically normalized w/o being explicitly told). */
+		let tmpPath = FilePath("/tmp/fake/fakechild/../with space/last")
+		/* Original test created the directory, because it must have checked the dependency actually exists, but we do not (and IMHO should not). */
+		//try fileManager.createDirectory(at: URL(filePath: tmpPath.string, directoryHint: .isDirectory), withIntermediateDirectories: true)
+		let parsed = try #require(ImportSpecification(line: "import Bar  // /tmp/fake/with space/last", scriptFolder: tmpPath, fileManager: fileManager, logger: logger))
+		#expect(parsed.moduleName == "Bar")
+		#expect(parsed.moduleSource == .local(tmpPath, scriptFolder: tmpPath))
+		#expect(parsed.packageDependencyLine(useSSHForGithubDependencies: false) == #".package(path: "\#(tmpPath.lexicallyNormalized().string)")"#)
+	}
 	
-//	func testCanProvideLocalPathWithSpacesAndRelativeParentsUpTwo() throws {
-//		let tmpPath = Path.root.tmp.fake.fakechild1.fakechild2/"../.."/"with space"/"last"
-//		try tmpPath.mkdir(.p)
-//		let b = try parse("import Bar  // /tmp/fake/with space/last", from: .path(tmpPath.join("script.swift")))
-//		XCTAssertEqual(b?.dependencyName, .local(tmpPath))
-//		XCTAssertEqual(b?.importName, "Bar")
-//		XCTAssertEqual(b?.packageLine, ".package(path: \"\(tmpPath.string)\")")
-//	}
+	@Test
+	func testCanProvideLocalPathWithSpacesAndRelativeParentsUpTwo() throws {
+		/* Same note as previous test. */
+		let tmpPath = FilePath("/tmp/fake/fakechild1/fakechild2/../../with space/last")
+		/* Original test created the directory, because it must have checked the dependency actually exists, but we do not (and IMHO should not). */
+		//try fileManager.createDirectory(at: URL(filePath: tmpPath.string, directoryHint: .isDirectory), withIntermediateDirectories: true)
+		let parsed = try #require(ImportSpecification(line: "import Bar  // /tmp/fake/with space/last", scriptFolder: tmpPath, fileManager: fileManager, logger: logger))
+		#expect(parsed.moduleName == "Bar")
+		#expect(parsed.moduleSource == .local(tmpPath, scriptFolder: tmpPath))
+		#expect(parsed.packageDependencyLine(useSSHForGithubDependencies: false) == #".package(path: "\#(tmpPath.lexicallyNormalized().string)")"#)
+	}
 	
 	@Test
 	func testCanProvideFullURL() throws {
@@ -205,21 +223,22 @@ struct ImportSpecificationUnitTests {
 		#expect(parsed.constraint == .upToNextMajor(from: .one))
 	}
 	
-//	func testCanProvideFullURLWithHyphen() throws {
-//		let b = try parse("import Bar  // https://example.com/mxcl/swift-bar.git ~> 1.0", from: .path(Path.cwd.join("script.swift")))
-//		XCTAssertEqual(b?.dependencyName, .url(URL(string: "https://example.com/mxcl/swift-bar.git")!))
-//		XCTAssertEqual(b?.constraint, .upToNextMajor(from: .one))
-//		XCTAssertEqual(b?.importName, "Bar")
-//	}
+	@Test
+	func testCanProvideFullURLWithHyphen() throws {
+		let parsed = try #require(ImportSpecification(line: "import Bar  // https://example.com/mxcl/swift-bar.git ~> 1.0", scriptFolder: cwdPath, fileManager: fileManager, logger: logger))
+		#expect(parsed.moduleName == "Bar")
+		#expect(parsed.moduleSource == .url(URL(string: "https://example.com/mxcl/swift-bar.git")!))
+		#expect(parsed.constraint == .upToNextMajor(from: .one))
+	}
 	
-//	func testCanProvideFullSSHURLWithHyphen() throws {
-//		let url = "ssh://git@github.com/MariusCiocanel/swift-sh.git"
-//		let b = try parse("import Bar  // \(url) ~> 1.0", from: .path(Path.cwd.join("script.swift")))
-//		XCTAssertEqual(b?.dependencyName, .url(URL(string: url)!))
-//		XCTAssertEqual(b?.constraint, .upToNextMajor(from: .one))
-//		XCTAssertEqual(b?.importName, "Bar")
-//		XCTAssertEqual(b?.dependencyName.urlString, url)
-//	}
+	@Test
+	func testCanProvideFullSSHURLWithHyphen() throws {
+		let urlStr = "ssh://git@github.com/MariusCiocanel/swift-sh.git"
+		let parsed = try #require(ImportSpecification(line: "import Bar  // \(urlStr) ~> 1.0", scriptFolder: cwdPath, fileManager: fileManager, logger: logger))
+		#expect(parsed.moduleName == "Bar")
+		#expect(parsed.moduleSource == .url(URL(string: "ssh://git@github.com/MariusCiocanel/swift-sh.git")!))
+		#expect(parsed.constraint == .upToNextMajor(from: .one))
+	}
 	
 	@Test
 	func testCanProvideCommonSSHURLStyle() throws {
@@ -230,47 +249,47 @@ struct ImportSpecificationUnitTests {
 		#expect(parsed.constraint == .upToNextMajor(from: .one))
 	}
 	
-//	func testCanProvideCommonSSHURLStyleWithHyphen() throws {
-//		let uri = "git@github.com:MariusCiocanel/swift-sh.git"
-//		let b = try parse("import Bar  // \(uri) ~> 1.0", from: .path(Path.cwd.join("script.swift")))
-//		XCTAssertEqual(b?.dependencyName, .scp(uri))
-//		XCTAssertEqual(b?.constraint, .upToNextMajor(from: .one))
-//		XCTAssertEqual(b?.importName, "Bar")
-//		XCTAssertEqual(b?.dependencyName.urlString, "git@github.com:MariusCiocanel/swift-sh.git")
-//	}
+	@Test
+	func testCanProvideCommonSSHURLStyleWithHyphen() throws {
+		let uriStr = "git@github.com:MariusCiocanel/swift-sh.git"
+		let parsed = try #require(ImportSpecification(line: "import Bar  // \(uriStr) ~> 1.0", scriptFolder: cwdPath, fileManager: fileManager, logger: logger))
+		#expect(parsed.moduleName == "Bar")
+		#expect(parsed.moduleSource == .scp("git@github.com:MariusCiocanel/swift-sh.git"))
+		#expect(parsed.constraint == .upToNextMajor(from: .one))
+	}
 	
-//	func testCanDoSpecifiedImports() throws {
-//		let kinds = [
-//			"struct",
-//			"class",
-//			"enum",
-//			"protocol",
-//			"typealias",
-//			"func",
-//			"let",
-//			"var"
-//		]
-//		for kind in kinds {
-//			let b = try parse("import \(kind) Foo.bar  // https://example.com/mxcl/Bar.git ~> 1.0", from: .path(Path.cwd.join("script.swift")))
-//			XCTAssertEqual(b?.dependencyName, .url(URL(string: "https://example.com/mxcl/Bar.git")!))
-//			XCTAssertEqual(b?.constraint, .upToNextMajor(from: .one))
-//			XCTAssertEqual(b?.importName, "Foo")
-//		}
-//	}
+	@Test(arguments: [
+		"struct",
+		"class",
+		"enum",
+		"protocol",
+		"typealias",
+		"func",
+		"let",
+		"var",
+	])
+	func testCanDoSpecifiedImports(kind: String) throws {
+		let parsed = try #require(ImportSpecification(line: "import \(kind) Foo.bar  // https://example.com/mxcl/Bar.git ~> 1.0", scriptFolder: cwdPath, fileManager: fileManager, logger: logger))
+		#expect(parsed.moduleName == "Foo")
+		#expect(parsed.moduleSource == .url(URL(string: "https://example.com/mxcl/Bar.git")!))
+		#expect(parsed.constraint == .upToNextMajor(from: .one))
+	}
 	
-//	func testCanUseTestable() throws {
-//		let b = try parse("@testable import Foo  // @bar ~> 1.0", from: .path(Path.cwd.join("script.swift")))
-//		XCTAssertEqual(b?.dependencyName, .github(user: "bar", repo: "Foo"))
-//		XCTAssertEqual(b?.constraint, .upToNextMajor(from: .one))
-//		XCTAssertEqual(b?.importName, "Foo")
-//	}
+	@Test
+	func testCanUseTestable() throws {
+		let parsed = try #require(ImportSpecification(line: "@testable import Foo  // @bar ~> 1.0", scriptFolder: cwdPath, fileManager: fileManager, logger: logger))
+		#expect(parsed.moduleName == "Foo")
+		#expect(parsed.moduleSource == .github(user: "bar", repo: nil))
+		#expect(parsed.constraint == .upToNextMajor(from: .one))
+	}
 	
-//	func testLatestVersion() throws {
-//		let b = try parse("import Foo  // @bar", from: .path(Path.cwd.join("script.swift")))
-//		XCTAssertEqual(b?.dependencyName, .github(user: "bar", repo: "Foo"))
-//		XCTAssertEqual(b?.constraint, .latest)
-//		XCTAssertEqual(b?.importName, "Foo")
-//	}
+	@Test
+	func testLatestVersion() throws {
+		let parsed = try #require(ImportSpecification(line: "import Foo  // @bar", scriptFolder: cwdPath, fileManager: fileManager, logger: logger))
+		#expect(parsed.moduleName == "Foo")
+		#expect(parsed.moduleSource == .github(user: "bar", repo: nil))
+		#expect(parsed.constraint == .latest)
+	}
 	
 	@Test
 	func testUnversionedHelpersImport() throws {
