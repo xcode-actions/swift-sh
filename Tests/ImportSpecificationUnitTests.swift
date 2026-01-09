@@ -317,4 +317,12 @@ struct ImportSpecificationUnitTests {
 		#expect(parsed.constraint == .exact(.init(3, 1, 21)))
 	}
 	
+	@Test
+	func testStarCommentWithContentAfter() throws {
+		let parsed = try #require(ImportSpecification(line: #"import Yolo /* @Frizlab/yolo == 1.0 */; print("ok") /* Another comment */"#, scriptFolder: cwdPath, fileManager: fileManager, logger: logger))
+		#expect(parsed.moduleName == "Yolo")
+		#expect(parsed.moduleSource == .github(user: "Frizlab", repo: "yolo"))
+		#expect(parsed.constraint == .exact(.one))
+	}
+	
 }
