@@ -4,6 +4,9 @@ import XcodeProj
 import PathKit
 
 
+/* Creates an Xcode project in the caches directory w/ the proper dependencies setup and open it. */
+
+
 func fatal() -> Never {
 	fputs("error: invalid usage\n", stderr)
 	exit(1)

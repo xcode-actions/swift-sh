@@ -6,6 +6,9 @@ import Path
 
 
 
+/* Converts a swift-sh script to an actual full-blown SPM project. */
+
+
 public func eject(_ script: Path, force: Bool) throws {
 	guard script.isFile else {
 		throw CocoaError.error(.fileNoSuchFile)
