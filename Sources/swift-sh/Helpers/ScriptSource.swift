@@ -15,9 +15,9 @@ struct ScriptSource {
 	let scriptFolder: FilePath
 	
 	init(path: FilePath, fileManager fm: FileManager) throws {
-		let (pathRepresentsStdin, isReplayable) = Self.getPathInfo(path)
+		let (isStdinPlaceholder, isReplayable) = try Self.getPathInfo(path)
 		self.scriptPath = (isReplayable ? (path, false) : nil)
-		if pathRepresentsStdin {
+		if isStdinPlaceholder {
 			self.scriptName = "stdin"
 			self.dataHandle = .standardInput
 			self.scriptFolder = FilePath(fm.currentDirectoryPath)
@@ -34,10 +34,10 @@ struct ScriptSource {
 		self.scriptFolder = destPath.removingLastComponent()
 		self.scriptName = try destPath.stem ?! InternalError(message: "no stem") /* Note this error should never happen due to the way destPath is built. */
 		
-		let (pathRepresentsStdin, _) = Self.getPathInfo(path)
+		let isStdinPlaceholder = Self.isStdinPlaceholder(path)
 		do {
 			/* We open a do clause to have fh released at the end and the handle closed. */
-			let fh: FileHandle = try (pathRepresentsStdin ? .standardInput : .init(forReadingFrom: path.url))
+			let fh: FileHandle = try (isStdinPlaceholder ? .standardInput : .init(forReadingFrom: path.url))
 			let data = try fh.readToEnd() ?? Data()
 			try data.write(to: destPath.url)
 		}
@@ -64,12 +64,19 @@ struct ScriptSource {
 		}
 	}
 	
-	private static func getPathInfo(_ path: FilePath) -> (representsStdin: Bool, isReplayable: Bool) {
-		let pathRepresentsStdin = (path == "-")
-		/* TODO: Proper detection of non replayable content…
-		 * For now we only detect (badly) stdin, but there are a lot of non-replayable content! */
-		let isReplayable = (!pathRepresentsStdin && path != "/dev/stdin")
-		return (pathRepresentsStdin, isReplayable)
+	private static func isStdinPlaceholder(_ path: FilePath) -> Bool {
+		return path == "-"
+	}
+	
+	private static func getPathInfo(_ path: FilePath) throws -> (isStdinPlaceholder: Bool, isReplayable: Bool) {
+		guard !isStdinPlaceholder(path) else {
+			return (true, false)
+		}
+		
+		/* Let’s detect non-replayable content. */
+		let resources = try URL(filePath: path.string).resourceValues(forKeys: [.isRegularFileKey])
+		let isRegularFile = try resources.isRegularFile ?! InternalError(message: "Cannot get input file info.")
+		return (false, isRegularFile)
 	}
 	
 	private static func getTempFilePathPath(fileManager fm: FileManager) -> FilePath {
