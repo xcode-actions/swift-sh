@@ -49,6 +49,21 @@ extension ImportSpecification {
 			let moduleNameRef = Reference(Substring.self)
 			let starCommentContentRef = Reference(String?.self)
 			let doubleSlashCommentContentRef = Reference(String?.self)
+			
+			let starCommentRegex = Regex{
+				"/*"
+				maybeWhitespaces
+				Capture(OneOrMore(.reluctant){ .any }, as: starCommentContentRef, transform: { String($0) })
+				maybeWhitespaces
+				"*/"
+			}
+			let doubleSlashCommentRegex = Regex{
+				"//"
+				maybeWhitespaces
+				Capture(OneOrMore(.reluctant){ .any }, as: doubleSlashCommentContentRef, transform: { String($0) })
+				maybeWhitespaces
+				Anchor.endOfLine
+			}
 			let regex = Regex{
 				Anchor.startOfLine
 				maybeWhitespaces
@@ -56,7 +71,14 @@ extension ImportSpecification {
 				"import"; whitespaces
 				Optionally{ importSpecifier; whitespaces }
 				
-				Capture(as: moduleNameRef){ OneOrMore(.reluctant){ .any }; Lookahead{ ChoiceOf{ "."; "/"; .horizontalWhitespace; Anchor.endOfLine } } }
+				Capture(as: moduleNameRef){
+					OneOrMore(.reluctant){ .any }
+					Lookahead{ ChoiceOf{
+						"."; "/";
+						.horizontalWhitespace
+						Anchor.endOfLine
+					} }
+				}
 				/* Theoretically this part is only possible (and must be there) if the import specifier (class, enum, etc.) is present.
 				 * To simplify, we’ll allow it always. */
 				Optionally{
@@ -66,20 +88,8 @@ extension ImportSpecification {
 				maybeWhitespaces
 				Optionally{
 					ChoiceOf{
-						Regex{
-							"/*"
-							maybeWhitespaces
-							Capture(OneOrMore(.reluctant){ .any }, as: starCommentContentRef, transform: { String($0) })
-							maybeWhitespaces
-							"*/"
-						}
-						Regex{
-							"//"
-							maybeWhitespaces
-							Capture(OneOrMore(.reluctant){ .any }, as: doubleSlashCommentContentRef, transform: { String($0) })
-							maybeWhitespaces
-							Anchor.endOfLine
-						}
+						starCommentRegex
+						doubleSlashCommentRegex
 					}
 				}
 			}
