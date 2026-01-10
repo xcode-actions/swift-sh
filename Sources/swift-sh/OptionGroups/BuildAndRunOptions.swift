@@ -103,8 +103,6 @@ final class BuildAndRunOptions : ParsableArguments {
 		return (swiftArgs, scriptPathForSwift, scriptData?.0, packageFolderPath, cleanup)
 	}
 	
-	private struct InternalError : Error {var message: String}
-	
 }
 
 

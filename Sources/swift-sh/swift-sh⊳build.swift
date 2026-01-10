@@ -54,8 +54,6 @@ struct Build : AsyncParsableCommand {
 		try FileManager.default.moveItem(at: compiledFilePath.url, to: finalCompiledFilePath.url)
 	}
 	
-	private struct InternalError : Error {var message: String}
-	
 }
 
 

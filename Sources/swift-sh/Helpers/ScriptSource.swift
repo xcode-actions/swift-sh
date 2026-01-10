@@ -104,6 +104,4 @@ struct ScriptSource {
 		return FilePath(p)
 	}
 	
-	private struct InternalError : Error {var message: String}
-	
 }
