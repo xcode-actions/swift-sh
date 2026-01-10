@@ -201,10 +201,10 @@ struct DepsPackage {
 				let isHeaders = url.lastPathComponent.lowercased() == "headers"
 				if isXcframework && isMacOS {
 					if isFramework {
-						ret.append("-I\(url.absoluteURL.path)/Headers")
+						ret.append("-I\(url.absoluteURL.path(percentEncoded: false))/Headers")
 						directoryEnumerator.skipDescendants()
 					} else if isHeaders {
-						ret.append("-I\(url.absoluteURL.path)")
+						ret.append("-I\(url.absoluteURL.path(percentEncoded: false))")
 						directoryEnumerator.skipDescendants()
 					}
 				}
@@ -220,7 +220,7 @@ struct DepsPackage {
 				if url.lastPathComponent.lowercased() == "module.modulemap",
 					try String(contentsOf: url, encoding: .utf8).contains("[system]")
 				{
-					ret.append("-I\(url.deletingLastPathComponent().absoluteURL.path)")
+					ret.append("-I\(url.deletingLastPathComponent().absoluteURL.path(percentEncoded: false))")
 					directoryEnumerator.skipDescendants()
 				}
 			}

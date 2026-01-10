@@ -95,11 +95,7 @@ struct ScriptSource {
 	private static func getTempFilePathPath(fileManager fm: FileManager) -> FilePath {
 		var p: String
 		repeat {
-#if canImport(Darwin)
-			p = fm.temporaryDirectory.appending(path: "swift-sh-inline-content-\(UUID().uuidString).swift", directoryHint: .notDirectory).path
-#else
-			p = fm.temporaryDirectory.appendingPathComponent("swift-sh-inline-content-\(UUID().uuidString).swift").path
-#endif
+			p = fm.temporaryDirectory.appending(path: "swift-sh-inline-content-\(UUID().uuidString).swift", directoryHint: .notDirectory).path(percentEncoded: false)
 		} while fm.fileExists(atPath: p)
 		return FilePath(p)
 	}

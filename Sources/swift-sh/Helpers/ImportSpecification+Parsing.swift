@@ -280,9 +280,9 @@ extension ImportSpecification.ModuleSource {
 						logger.info("Cannot get home directory for user; dropping import spec.", metadata: ["username": "\(username)"])
 						return nil
 					}
-					home = FilePath(homeDir.path)
+					home = FilePath(homeDir.path(percentEncoded: false))
 				} else {
-					home = FilePath(fm.homeDirectoryForCurrentUser.path)
+					home = FilePath(fm.homeDirectoryForCurrentUser.path(percentEncoded: false))
 				}
 				path.replaceSubrange(match.range, with: home.string)
 			}
