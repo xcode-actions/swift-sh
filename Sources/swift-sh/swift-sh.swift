@@ -15,6 +15,7 @@ struct SwiftSH : AsyncParsableCommand {
 			Build.self,
 			Clean.self,
 			Create.self,
+			Edit.self,
 			Eject.self,
 			Run.self
 		],
