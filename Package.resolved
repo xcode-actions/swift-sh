@@ -1,5 +1,5 @@
 {
-  "originHash" : "6b39dfcc50e57e48fec4be6a8b3742eb78d9009703bca11ca1bec1ca62b5c7f1",
+  "originHash" : "12cf0fdc793743266dbad3f5c56c37c736c777ebe7c1305e3a69377932c280c0",
   "pins" : [
     {
       "identity" : "clt-logger",
@@ -114,8 +114,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/Frizlab/swift-xdg.git",
       "state" : {
-        "revision" : "8256bc1474ac3a6c53f31a605c57a38a387cbeb0",
-        "version" : "2.0.0"
+        "revision" : "ac3e885b0de05ad3e57b37769c0ea568413fd9c9",
+        "version" : "2.0.1"
       }
     },
     {
