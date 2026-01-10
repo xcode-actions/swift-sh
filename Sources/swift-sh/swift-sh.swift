@@ -13,6 +13,7 @@ struct SwiftSH : AsyncParsableCommand {
 		version: "dev", /* DO NOT REMOVE: VERSION_PLACEHOLDER. This tag is used to automatically replace the version when building in Homebrew. */
 		subcommands: [
 			Build.self,
+			Clean.self,
 			Eject.self,
 			Run.self
 		],
