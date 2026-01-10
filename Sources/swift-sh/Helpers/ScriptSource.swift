@@ -14,6 +14,8 @@ struct ScriptSource {
 	let scriptPath: (FilePath, isTmp: Bool)? /* nil if the source is non-replayable. */
 	let scriptFolder: FilePath
 	
+	let initialAbsoluteScriptPath: FilePath?
+	
 	init(path: FilePath, fileManager fm: FileManager) throws {
 		let (isStdinPlaceholder, isReplayable) = try Self.getPathInfo(path)
 		self.scriptPath = (isReplayable ? (path, false) : nil)
@@ -21,10 +23,12 @@ struct ScriptSource {
 			self.scriptName = "stdin"
 			self.dataHandle = .standardInput
 			self.scriptFolder = FilePath(fm.currentDirectoryPath)
+			self.initialAbsoluteScriptPath = nil
 		} else {
 			self.scriptName = path.stem ?? "unknown"
 			self.dataHandle = try FileHandle(forReadingFrom: path.url)
 			self.scriptFolder = path.removingLastComponent()
+			self.initialAbsoluteScriptPath = FilePath(fm.currentDirectoryPath).pushing(path)
 		}
 	}
 	
@@ -42,6 +46,7 @@ struct ScriptSource {
 			try data.write(to: destPath.url)
 		}
 		self.dataHandle = try FileHandle(forReadingFrom: destPath.url)
+		self.initialAbsoluteScriptPath = isStdinPlaceholder ? nil : FilePath(fm.currentDirectoryPath).pushing(path)
 	}
 	
 	init(content: String, fileManager fm: FileManager, logger: Logger) throws {
@@ -57,6 +62,7 @@ struct ScriptSource {
 			self.scriptName = "inline-content"
 			self.dataHandle = try FileHandle(forReadingFrom: URL(fileURLWithPath: p))
 			self.scriptFolder = FilePath(fm.currentDirectoryPath)
+			self.initialAbsoluteScriptPath = nil
 		} catch {
 			do    {try fm.removeItem(atPath: p)}
 			catch {logger.warning("Failed removing temporary file.", metadata: ["file-path": "\(p)", "error": "\(error)"])}

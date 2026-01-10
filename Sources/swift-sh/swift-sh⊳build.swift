@@ -28,7 +28,7 @@ struct Build : AsyncParsableCommand {
 			}
 		}
 		
-		let (args, swiftFile, stdinData, packageFolderPath, cleanup) = try await runOptions.prepareRun(forceCopySource: true, logger: logger)
+		let (args, swiftFile, stdinData, packageFolderPath, cleanup) = try await runOptions.prepareRun(forBuilding: true, logger: logger)
 		defer {cleanup()}
 		
 		let swiftFilePath = FilePath(swiftFile)

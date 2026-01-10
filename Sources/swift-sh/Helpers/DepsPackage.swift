@@ -17,16 +17,16 @@ struct DepsPackage {
 	private let packageSwiftContent: Data
 	
 	/* Returns nil if no package is needed (skipPackageOnNoRemoteModules && no remote package). */
-	init?(scriptSource: ScriptSource, scriptData: inout (Data, hash: Data)?, useSSHForGithubDependencies: Bool, skipPackageOnNoRemoteModules: Bool, fileManager fm: FileManager, logger: Logger) throws {
+	init?(scriptSource: ScriptSource, scriptData: inout Data?, scriptHash: inout Data?, useSSHForGithubDependencies: Bool, skipPackageOnNoRemoteModules: Bool, fileManager fm: FileManager, logger: Logger) throws {
 		/* Let’s parse the source file.
 		 * We’re doing a very bad job at parsing, but that’s mostly on purpose. */
 		var importSpecs = [ImportSpecification]()
-		var hasher = (scriptData != nil ? Insecure.MD5() : nil)
+		var hasher = (scriptHash != nil ? Insecure.MD5() : nil)
 		let streamReader = FileHandleReader(stream: scriptSource.dataHandle, bufferSize: 3 * 1024, bufferSizeIncrement: 1024, underlyingStreamReadSizeLimit: 1)
 		while let (lineData, eolData) = try streamReader.readLine() {
 //			logger.trace("Received new source line data.", metadata: ["line-data": "\(lineData.reduce("", { $0 + String(format: "%02x", $1) }))"])
-			scriptData?.0.append(lineData); hasher?.update(data: lineData)
-			scriptData?.0.append(eolData);  hasher?.update(data: eolData)
+			scriptData?.append(lineData); hasher?.update(data: lineData)
+			scriptData?.append(eolData);  hasher?.update(data: eolData)
 			
 			guard let lineStr = String(data: lineData, encoding: .utf8) else {
 				/* We ignore non-UTF8 lines.
@@ -51,7 +51,7 @@ struct DepsPackage {
 			logger.debug("Found new import specification.", metadata: ["import-spec": "\(importSpec)", "line": "\(lineStr)"])
 			importSpecs.append(importSpec)
 		}
-		hasher.flatMap{ scriptData?.hash = Data($0.finalize()) }
+		hasher.flatMap{ scriptHash = Data($0.finalize()) }
 		
 		guard !importSpecs.isEmpty || !skipPackageOnNoRemoteModules else {
 			return nil
