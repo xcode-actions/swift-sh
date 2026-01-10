@@ -1,9 +1,11 @@
 import Foundation
 
 import ArgumentParser
+import Crypto
 import InlineObjectConfig
 import Logging
 import SystemPackage
+import XDG
 
 
 
@@ -47,6 +49,30 @@ struct Clean : AsyncParsableCommand {
 			}
 			if targets.contains(.all) {
 				targets = [.all]
+			}
+		}
+		
+		let fm = FileManager.default
+		let xdgDirs = try BaseDirectories.swiftSH.get()
+		for target in fullTargets {
+			switch target {
+				case .all:
+					let cacheFolder = xdgDirs.cacheHomePrefixed
+					try fm.removeIfExistsWithLog(cacheFolder, logger: logger)
+					
+				case .ephemeral:
+					let markersFolderPath = try xdgDirs.markersFolderPath()
+					/* TODO: Implement this. */
+					
+				case .unused:
+					let storeFolderPath = try xdgDirs.storeFolderPath()
+					let markersFolderPath = try xdgDirs.markersFolderPath()
+					/* TODO: Implement this. */
+					
+				case .script(let path):
+					let path = FilePath(fm.currentDirectoryPath).pushing(path)
+					let cachePath = try xdgDirs.markerPathWith(absoluteScriptPath: path, nonReplayableScriptDataHash: nil, hashFunction: Insecure.MD5.self)
+					try fm.removeIfExistsWithLog(cachePath, logger: logger)
 			}
 		}
 	}
