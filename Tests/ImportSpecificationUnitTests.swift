@@ -85,7 +85,7 @@ struct ImportSpecificationUnitTests {
 		let parsed = try #require(ImportSpecification(line: "import Bar  // \(homePath.string)", scriptFolder: homePath, fileManager: fileManager, logger: logger))
 		#expect(parsed.moduleName == "Bar")
 		#expect(parsed.moduleSource == .local(homePath, scriptFolder: homePath))
-		#expect(parsed.packageDependencyLine(useSSHForGithubDependencies: false) == #".package(path: "\#(homePath.string)")"#)
+		#expect(parsed.packageDependencyLine(useSSHForGithubDependencies: false, fileManager: fileManager) == #".package(path: "\#(homePath.string)")"#)
 	}
 	
 	@Test
@@ -93,7 +93,7 @@ struct ImportSpecificationUnitTests {
 		let parsed = try #require(ImportSpecification(line: "import Bar  // ~/", scriptFolder: homePath, fileManager: fileManager, logger: logger))
 		#expect(parsed.moduleName == "Bar")
 		#expect(parsed.moduleSource == .local(homePath, scriptFolder: homePath))
-		#expect(parsed.packageDependencyLine(useSSHForGithubDependencies: false) == #".package(path: "\#(homePath.string)")"#)
+		#expect(parsed.packageDependencyLine(useSSHForGithubDependencies: false, fileManager: fileManager) == #".package(path: "\#(homePath.string)")"#)
 	}
 	
 	@Test
@@ -101,7 +101,7 @@ struct ImportSpecificationUnitTests {
 		let parsed = try #require(ImportSpecification(line: "import Bar  // ./", scriptFolder: cwdPath, fileManager: fileManager, logger: logger))
 		#expect(parsed.moduleName == "Bar")
 		#expect(parsed.moduleSource == .local(".", scriptFolder: cwdPath))
-		#expect(parsed.packageDependencyLine(useSSHForGithubDependencies: false) == #".package(path: "\#(cwdPath.string)/.")"#)
+		#expect(parsed.packageDependencyLine(useSSHForGithubDependencies: false, fileManager: fileManager) == #".package(path: "\#(cwdPath.string)/.")"#)
 	}
 	
 	@Test
@@ -110,7 +110,7 @@ struct ImportSpecificationUnitTests {
 		let parsed = try #require(ImportSpecification(line: "import Bar  // ./", scriptFolder: homePath, fileManager: fileManager, logger: logger))
 		#expect(parsed.moduleName == "Bar")
 		#expect(parsed.moduleSource == .local(".", scriptFolder: homePath))
-		#expect(parsed.packageDependencyLine(useSSHForGithubDependencies: false) == #".package(path: "\#(homePath.string)/.")"#)
+		#expect(parsed.packageDependencyLine(useSSHForGithubDependencies: false, fileManager: fileManager) == #".package(path: "\#(homePath.string)/.")"#)
 	}
 	
 	@Test
@@ -119,7 +119,7 @@ struct ImportSpecificationUnitTests {
 		let parsed = try #require(ImportSpecification(line: "import Bar  // ../", scriptFolder: cwdPath, fileManager: fileManager, logger: logger))
 		#expect(parsed.moduleName == "Bar")
 		#expect(parsed.moduleSource == .local("..", scriptFolder: cwdPath))
-		#expect(parsed.packageDependencyLine(useSSHForGithubDependencies: false) == #".package(path: "\#(cwdParent.string)")"#)
+		#expect(parsed.packageDependencyLine(useSSHForGithubDependencies: false, fileManager: fileManager) == #".package(path: "\#(cwdParent.string)")"#)
 	}
 	
 	@Test
@@ -128,7 +128,7 @@ struct ImportSpecificationUnitTests {
 		let parsed = try #require(ImportSpecification(line: "import Bar  // ../../", scriptFolder: cwdPath, fileManager: fileManager, logger: logger))
 		#expect(parsed.moduleName == "Bar")
 		#expect(parsed.moduleSource == .local("../..", scriptFolder: cwdPath))
-		#expect(parsed.packageDependencyLine(useSSHForGithubDependencies: false) == #".package(path: "\#(cwdParent.string)")"#)
+		#expect(parsed.packageDependencyLine(useSSHForGithubDependencies: false, fileManager: fileManager) == #".package(path: "\#(cwdParent.string)")"#)
 	}
 	
 	@Test
@@ -139,7 +139,7 @@ struct ImportSpecificationUnitTests {
 		let parsed = try #require(ImportSpecification(line: "import Foo  // /tmp/fake/with-hyphen-two/lastone", scriptFolder: tmpPath, fileManager: fileManager, logger: logger))
 		#expect(parsed.moduleName == "Foo")
 		#expect(parsed.moduleSource == .local(tmpPath, scriptFolder: tmpPath))
-		#expect(parsed.packageDependencyLine(useSSHForGithubDependencies: false) == #".package(path: "\#(tmpPath.string)")"#)
+		#expect(parsed.packageDependencyLine(useSSHForGithubDependencies: false, fileManager: fileManager) == #".package(path: "\#(tmpPath.string)")"#)
 	}
 	
 	@Test
@@ -150,7 +150,7 @@ struct ImportSpecificationUnitTests {
 		let parsed = try #require(ImportSpecification(line: "import Foo  // /tmp/fake/with-hyphen.two.one-zero/last one", scriptFolder: tmpPath, fileManager: fileManager, logger: logger))
 		#expect(parsed.moduleName == "Foo")
 		#expect(parsed.moduleSource == .local(tmpPath, scriptFolder: tmpPath))
-		#expect(parsed.packageDependencyLine(useSSHForGithubDependencies: false) == #".package(path: "\#(tmpPath.string)")"#)
+		#expect(parsed.packageDependencyLine(useSSHForGithubDependencies: false, fileManager: fileManager) == #".package(path: "\#(tmpPath.string)")"#)
 	}
 	
 	@Test
@@ -161,7 +161,7 @@ struct ImportSpecificationUnitTests {
 		let parsed = try #require(ImportSpecification(line: "import Bar  // /tmp/fake/with space/last", scriptFolder: tmpPath, fileManager: fileManager, logger: logger))
 		#expect(parsed.moduleName == "Bar")
 		#expect(parsed.moduleSource == .local(tmpPath, scriptFolder: tmpPath))
-		#expect(parsed.packageDependencyLine(useSSHForGithubDependencies: false) == #".package(path: "\#(tmpPath.string)")"#)
+		#expect(parsed.packageDependencyLine(useSSHForGithubDependencies: false, fileManager: fileManager) == #".package(path: "\#(tmpPath.string)")"#)
 	}
 	
 	@Test
@@ -172,7 +172,7 @@ struct ImportSpecificationUnitTests {
 		let parsed = try #require(ImportSpecification(line: "import Foo  // /tmp/fake/with space/last one", scriptFolder: tmpPath, fileManager: fileManager, logger: logger))
 		#expect(parsed.moduleName == "Foo")
 		#expect(parsed.moduleSource == .local(tmpPath, scriptFolder: tmpPath))
-		#expect(parsed.packageDependencyLine(useSSHForGithubDependencies: false) == #".package(path: "\#(tmpPath.string)")"#)
+		#expect(parsed.packageDependencyLine(useSSHForGithubDependencies: false, fileManager: fileManager) == #".package(path: "\#(tmpPath.string)")"#)
 	}
 	
 	@Test
@@ -186,7 +186,7 @@ struct ImportSpecificationUnitTests {
 		let parsed = try #require(ImportSpecification(line: "import Bar  // /tmp/fake/with space/last", scriptFolder: tmpPath, fileManager: fileManager, logger: logger))
 		#expect(parsed.moduleName == "Bar")
 		#expect(parsed.moduleSource == .local(tmpPath.lexicallyNormalized(), scriptFolder: tmpPath))
-		#expect(parsed.packageDependencyLine(useSSHForGithubDependencies: false) == #".package(path: "\#(tmpPath.lexicallyNormalized().string)")"#)
+		#expect(parsed.packageDependencyLine(useSSHForGithubDependencies: false, fileManager: fileManager) == #".package(path: "\#(tmpPath.lexicallyNormalized().string)")"#)
 	}
 	
 	@Test
@@ -198,7 +198,7 @@ struct ImportSpecificationUnitTests {
 		let parsed = try #require(ImportSpecification(line: "import Bar  // /tmp/fake/with space/last", scriptFolder: tmpPath, fileManager: fileManager, logger: logger))
 		#expect(parsed.moduleName == "Bar")
 		#expect(parsed.moduleSource == .local(tmpPath.lexicallyNormalized(), scriptFolder: tmpPath))
-		#expect(parsed.packageDependencyLine(useSSHForGithubDependencies: false) == #".package(path: "\#(tmpPath.lexicallyNormalized().string)")"#)
+		#expect(parsed.packageDependencyLine(useSSHForGithubDependencies: false, fileManager: fileManager) == #".package(path: "\#(tmpPath.lexicallyNormalized().string)")"#)
 	}
 	
 	@Test
