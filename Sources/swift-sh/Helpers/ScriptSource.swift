@@ -35,8 +35,8 @@ struct ScriptSource {
 	init(copying path: FilePath, fileManager fm: FileManager) throws {
 		let destPath = Self.getTempFilePathPath(fileManager: fm)
 		self.scriptPath = (destPath, true)
-		self.scriptFolder = destPath.removingLastComponent()
-		self.scriptName = try destPath.stem ?! InternalError(message: "no stem") /* Note this error should never happen due to the way destPath is built. */
+		self.scriptFolder = path.removingLastComponent()
+		self.scriptName = try path.stem ?! InternalError(message: "no stem") /* Note this error should never happen due to the way destPath is built. */
 		
 		let isStdinPlaceholder = Self.isStdinPlaceholder(path)
 		do {
