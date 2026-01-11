@@ -10,10 +10,10 @@ import Version
 
 extension ImportSpecification {
 	
-	func packageDependencyLine(useSSHForGithubDependencies: Bool) -> String {
+	func packageDependencyLine(useSSHForGithubDependencies: Bool, fileManager: FileManager) -> String {
 		let githubPrefix = (!useSSHForGithubDependencies ? "https://github.com/" : "git@github.com:")
 		switch moduleSource {
-			case let .local(path, scriptFolder): return #".package(path: "\#((scriptFolder?.pushing(path) ?? path).string.escaped())")"#
+			case let .local(path, scriptFolder): return #".package(path: "\#(FilePath(fileManager.currentDirectoryPath).pushing(scriptFolder?.pushing(path) ?? path).string.escaped())")"#
 			case let .scp(scpDescr):             return #".package(url: "\#(scpDescr.escaped())", "#                                                    + "\(constraint.forPackageLine()))"
 			case let .url(url):                  return #".package(url: "\#(url.absoluteString.escaped())", "#                                          + "\(constraint.forPackageLine()))"
 			case let .github(user, repo):        return #".package(url: "\#(githubPrefix)\#(user.escaped())/\#((repo ?? moduleName).escaped()).git", "# + "\(constraint.forPackageLine()))"

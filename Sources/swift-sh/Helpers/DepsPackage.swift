@@ -57,7 +57,7 @@ struct DepsPackage {
 			return nil
 		}
 		
-		self.packageSwiftContent = Self.packageSwiftContentWith(importSpecifications: importSpecs, useSSHForGithubDependencies: useSSHForGithubDependencies)
+		self.packageSwiftContent = Self.packageSwiftContentWith(importSpecifications: importSpecs, useSSHForGithubDependencies: useSSHForGithubDependencies, fileManager: fm)
 		self.packageHash = Data(SHA256.hash(data: packageSwiftContent))
 	}
 	
@@ -228,7 +228,7 @@ struct DepsPackage {
 		return ret
 	}
 	
-	private static func packageSwiftContentWith(importSpecifications: [ImportSpecification], useSSHForGithubDependencies: Bool) -> Data {
+	private static func packageSwiftContentWith(importSpecifications: [ImportSpecification], useSSHForGithubDependencies: Bool, fileManager: FileManager) -> Data {
 		let platforms: String = {
 #if os(macOS)
 			let version = ProcessInfo.processInfo.operatingSystemVersion
@@ -254,7 +254,9 @@ struct DepsPackage {
 				platforms: \#(platforms),
 				products: [.library(name: "SwiftSH_Deps", targets: ["SwiftSH_DummyDepsLib"])],
 				dependencies: [
-					\#(importSpecifications.map{ $0.packageDependencyLine(useSSHForGithubDependencies: useSSHForGithubDependencies) }.joined(separator: ",\n\t\t"))
+					\#(importSpecifications.map{
+						$0.packageDependencyLine(useSSHForGithubDependencies: useSSHForGithubDependencies, fileManager: fileManager)
+					}.joined(separator: ",\n\t\t"))
 				],
 				targets: [
 					.target(name: "SwiftSH_DummyDepsLib", dependencies: [
