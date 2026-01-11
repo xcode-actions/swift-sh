@@ -81,6 +81,15 @@ struct ImportSpecificationUnitTests {
 	}
 	
 	@Test
+	func testAbsolutePathFromRelativeDependenciesWithRelativeScriptFolder() throws {
+		let cwdPath = FilePath(fileManager.currentDirectoryPath)
+		let parsed = try #require(ImportSpecification(line: "import Bar  // ../yolo", scriptFolder: "", fileManager: fileManager, logger: logger))
+		#expect(parsed.moduleName == "Bar")
+		#expect(parsed.moduleSource == .local("../yolo", scriptFolder: ""))
+		#expect(parsed.packageDependencyLine(useSSHForGithubDependencies: false, fileManager: fileManager) == #".package(path: "\#(cwdPath.pushing("../yolo").string)")"#)
+	}
+	
+	@Test
 	func testCanProvideLocalPath() throws {
 		let parsed = try #require(ImportSpecification(line: "import Bar  // \(homePath.string)", scriptFolder: homePath, fileManager: fileManager, logger: logger))
 		#expect(parsed.moduleName == "Bar")
