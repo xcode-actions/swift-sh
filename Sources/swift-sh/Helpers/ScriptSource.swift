@@ -52,20 +52,21 @@ struct ScriptSource {
 	init(content: String, fileManager fm: FileManager, logger: Logger) throws {
 		/* To do the `-c` option, we have to create a temporary file and delete it when we’re done.
 		 * This is due to swift not supporting the `-c` option, or an equivalent (AFAICT). */
-		let p = Self.getTempFilePathPath(fileManager: fm).string
-		guard fm.createFile(atPath: p, contents: Data(content.utf8), attributes: [.posixPermissions: 0o400]) else {
+		let p = Self.getTempFilePathPath(fileManager: fm)
+		let pStr = p.string
+		guard fm.createFile(atPath: pStr, contents: Data(content.utf8), attributes: [.posixPermissions: 0o400]) else {
 			struct CannotCreateTempFile : Error {var path: String}
-			throw CannotCreateTempFile(path: p)
+			throw CannotCreateTempFile(path: pStr)
 		}
 		do {
-			self.scriptPath = (FilePath(p), true)
+			self.scriptPath = (p, true)
 			self.scriptName = "inline-content"
-			self.dataHandle = try FileHandle(forReadingFrom: URL(fileURLWithPath: p))
+			self.dataHandle = try FileHandle(forReadingFrom: p.url)
 			self.scriptFolder = FilePath(fm.currentDirectoryPath)
 			self.initialAbsoluteScriptPath = nil
 		} catch {
-			do    {try fm.removeItem(atPath: p)}
-			catch {logger.warning("Failed removing temporary file.", metadata: ["file-path": "\(p)", "error": "\(error)"])}
+			do    {try fm.removeItem(atPath: pStr)}
+			catch {logger.warning("Failed removing temporary file.", metadata: ["file-path": "\(pStr)", "error": "\(error)"])}
 			throw error
 		}
 	}
