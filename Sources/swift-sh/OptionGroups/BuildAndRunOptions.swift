@@ -56,6 +56,8 @@ final class BuildAndRunOptions : ParsableArguments {
 		var scriptHash: Data?
 		if let scriptPath = scriptSource.scriptPath {
 			scriptData = nil
+			/* Regarding the need for the scriptHash when the script path is the content:
+			 *  it is only needed because we will use the hash of the contents of the script as the marker name for this script. */
 			scriptHash = scriptPathIsContent ? Data() : nil
 			scriptPathForSwift = scriptPath.0.string
 		} else {
