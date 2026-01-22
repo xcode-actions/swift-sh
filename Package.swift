@@ -19,13 +19,13 @@ let package = Package(
 		.package(url: "https://github.com/apple/swift-log.git",                        from: "1.8.0"),
 		.package(url: "https://github.com/apple/swift-system.git",                     from: "1.0.0"), /* We’re aware of the existence of System on macOS. After some thinking/research, we decided to agree with <https://forums.swift.org/t/50719/5>. */
 		.package(url: "https://github.com/Frizlab/InlineObjectConfig.git",             from: "1.0.0"),
+		.package(url: "https://github.com/Frizlab/stream-reader.git",                  from: "3.5.2"),
 		.package(url: "https://github.com/Frizlab/swift-xdg.git",                      from: "2.0.1"),
 		.package(url: "https://github.com/Frizlab/UnwrapOrThrow.git",                  from: "1.1.0"),
 		.package(url: "https://github.com/mxcl/LegibleError.git",                      from: "1.0.0"),
 		.package(url: "https://github.com/mxcl/Version.git",                           from: "2.0.0"),
 		.package(url: "https://github.com/xcode-actions/clt-logger.git",               from: "1.0.0"),
-		.package(url: "https://github.com/xcode-actions/stream-reader.git",            from: "3.5.2"),
-		.package(url: "https://github.com/xcode-actions/swift-process-invocation.git", from: "1.3.0-beta.5"),
+		.package(url: "https://github.com/xcode-actions/swift-process-invocation.git", from: "1.3.0-beta.5.0.1"),
 	],
 	targets: [
 		.executableTarget(name: "swift-sh", dependencies: [

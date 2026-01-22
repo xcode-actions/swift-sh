@@ -1,5 +1,5 @@
 {
-  "originHash" : "12cf0fdc793743266dbad3f5c56c37c736c777ebe7c1305e3a69377932c280c0",
+  "originHash" : "ee2fe7f207f472d0effebdc222c21cfda28fd62f2a683d167a70f63ef0af2af4",
   "pins" : [
     {
       "identity" : "clt-logger",
@@ -40,7 +40,7 @@
     {
       "identity" : "stream-reader",
       "kind" : "remoteSourceControl",
-      "location" : "https://github.com/xcode-actions/stream-reader.git",
+      "location" : "https://github.com/Frizlab/stream-reader.git",
       "state" : {
         "revision" : "e58ba797ba1c38de7dabc6df7d12b40c94d194a1",
         "version" : "3.6.1"
@@ -87,8 +87,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/xcode-actions/swift-process-invocation.git",
       "state" : {
-        "revision" : "3f048354c87fb7dcde624559b04c59392e0d6364",
-        "version" : "1.3.0-beta.5"
+        "revision" : "3e4efde516af4b01ab8a3da687541aad94523f3e",
+        "version" : "1.3.0-beta.5.0.1"
       }
     },
     {
