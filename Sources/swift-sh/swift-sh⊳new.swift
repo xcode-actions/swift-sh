@@ -13,8 +13,25 @@ struct New : AsyncParsableCommand {
 	@OptionGroup
 	var globalOptions: GlobalOptions
 	
-	@Argument
-	var scriptName: FilePath.Component
+	enum SwiftExtensionGeneration : EnumerableFlag {
+		case none, addIfNeeded
+		static func name(for value: Self) -> NameSpecification {
+			switch value {
+				case .none:        return [.customLong( "no-swift-extension"), .customShort("b")]
+				case .addIfNeeded: return [.customLong("add-swift-extension")]
+			}
+		}
+	}
+	@Flag
+	var addSwiftExtensionIfNeeded: SwiftExtensionGeneration = .addIfNeeded
+	
+	@Argument(help: """
+		The path to the new script.
+		The `.swift` extension is added to the path if not already there,
+		 unless the `--no-swift-extension` (or `-b`) option is set.
+		The parent folder of the given path must exist.
+		""")
+	var scriptPath: FilePath
 	
 	func run() async throws {
 		logger.error("Not implemented")
