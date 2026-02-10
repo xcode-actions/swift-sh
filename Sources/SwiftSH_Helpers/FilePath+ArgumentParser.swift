@@ -11,4 +11,8 @@ extension FilePath : @retroactive ExpressibleByArgument {
 		self.init(argument)
 	}
 	
+	public static var defaultCompletionKind: CompletionKind {
+		.file()
+	}
+	
 }
