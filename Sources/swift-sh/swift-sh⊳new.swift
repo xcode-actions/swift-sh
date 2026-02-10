@@ -25,6 +25,9 @@ struct New : AsyncParsableCommand {
 	@Flag
 	var addSwiftExtensionIfNeeded: SwiftExtensionGeneration = .addIfNeeded
 	
+	@Flag(inversion: .prefixedEnableDisable, help: "Whether allowing overwrite of an existing file is allowed.")
+	var overwrite: Bool = false
+	
 	@Argument(help: """
 		The path to the new script.
 		The `.swift` extension is added to the path if not already there,
