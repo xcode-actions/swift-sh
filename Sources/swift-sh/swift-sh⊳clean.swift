@@ -29,7 +29,7 @@ struct Clean : AsyncParsableCommand {
 			
 			The `ephemeral` target will clean the markers for ephemeral scripts (`-c` option, from stdin, etc.).
 			It will not however clean the actual cache that was used by those markers.
-			You should also clean the unused to get those cleaned (automatically added unless endByCleaningUnused is set to false).
+			You should also clean the unused to get those cleaned (automatically added unless `--end-by-cleaning-unused` is set to false).
 			
 			The `all` target will clean all of swift-sh’s cache.
 			
