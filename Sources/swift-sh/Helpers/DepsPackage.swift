@@ -115,6 +115,10 @@ struct DepsPackage {
 				}
 				logger.debug("swift output (\(fdName)): \(lineWithSource.strLineOrHex())")
 				
+				if lineWithSource.fd == .standardError {
+					errorOutput.append(lineWithSource.strLineOrHex())
+				}
+				
 				/* We parse the line, whichever fd it comes from.
 				 * Before Xcode 26.4, the line we are interested in was outputted on stdout.
 				 * At the time of writing (Xcode 26.4), it is outputted on stderr… */
