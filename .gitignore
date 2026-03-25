@@ -1,4 +1,8 @@
-/swift-sh.xcodeproj
-/sync
-/.swiftpm
-/.build
+# Xcode & Finder
+.DS_Store
+*.xcodeproj/
+
+# SwiftPM
+/.build/
+/.swiftpm/
+/Packages/
