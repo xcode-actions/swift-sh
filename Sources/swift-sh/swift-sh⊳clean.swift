@@ -62,12 +62,12 @@ struct Clean : AsyncParsableCommand {
 					
 				case .ephemeral:
 					let markersFolderPath = try xdgDirs.markersFolderPath()
-					/* TODO: Implement this. */
+					throw InternalError(message: "Not implemented")
 					
 				case .unused:
 					let storeFolderPath = try xdgDirs.storeFolderPath()
 					let markersFolderPath = try xdgDirs.markersFolderPath()
-					/* TODO: Implement this. */
+					throw InternalError(message: "Not implemented")
 					
 				case .script(let path):
 					let path = FilePath(fm.currentDirectoryPath).pushing(path)
