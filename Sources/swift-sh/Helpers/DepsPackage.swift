@@ -108,42 +108,37 @@ struct DepsPackage {
 		var errorOutput = [String]()
 		do {
 			for try await lineWithSource in pi {
-				switch lineWithSource.fd {
-					case masterFd:
-						/* This is interesting to us.
-						 * Let’s try and detect the REPL arguments. */
-						logger.debug("swift stdout: \(lineWithSource.strLineOrHex())")
-						guard let line = try? lineWithSource.strLine() else {
-							logger.warning("Got non-utf8 line output on stdout from swift.", metadata: ["line-as-hex": "\(lineWithSource.strLineOrHex())"])
-							continue
-						}
-						let regex = Regex{
-							OneOrMore{ .any }; ": repl "; Capture{ OneOrMore{ .any } }
-						}
-						guard let capture = try? regex.wholeMatch(in: line)?.output.1 else {
-							logger.debug("Ignored non-repl-matching output on stdout from swift.", metadata: ["line": "\(line)"])
-							continue
-						}
-						if let ret {
-							logger.warning("Got multiple lines matching repl args; taking the last one.", metadata: ["current-match": "\(ret.joined(separator: " "))"])
-						}
-						let newRet = capture.split(separator: " ").map(String.init)
-						if (
-							!newRet.contains(where: { $0.hasPrefix("-I") }) ||
-							!newRet.contains(where: { $0.hasPrefix("-L") }) ||
-							!newRet.contains(where: { $0.hasPrefix("-l") })
-						) {
-							logger.notice("Suspicious REPL args found.", metadata: ["args": "\(newRet.joined(separator: " "))"])
-						}
-						ret = newRet
-						
-					case .standardError:
-						logger.debug("swift stderr: \(lineWithSource.strLineOrHex())")
-						errorOutput.append(lineWithSource.strLineOrHex())
-						
-					default:
-						logger.warning("Got line from unknown fd from swift.", metadata: ["fd": "\(lineWithSource.fd)", "line-or-hex": "\(lineWithSource.strLineOrHex())"])
+				let fdName = switch lineWithSource.fd {
+					case masterFd:       "stdout"
+					case .standardError: "stderr"
+					default: "unknown fd"
 				}
+				logger.debug("swift output (\(fdName)): \(lineWithSource.strLineOrHex())")
+				
+				/* We parse the line, whichever fd it comes from.
+				 * Before Xcode 26.4, the line we are interested in was outputted on stdout.
+				 * At the time of writing (Xcode 26.4), it is outputted on stderr… */
+				guard let line = try? lineWithSource.strLine() else {
+					continue
+				}
+				let regex = Regex{
+					OneOrMore{ .any }; ": repl "; Capture{ OneOrMore{ .any } }
+				}
+				guard let capture = try? regex.wholeMatch(in: line)?.output.1 else {
+					continue
+				}
+				if let ret {
+					logger.warning("Got multiple lines matching repl args; taking the last one.", metadata: ["replaced-match": "\(ret.joined(separator: " "))"])
+				}
+				let newRet = capture.split(separator: " ").map(String.init)
+				if (
+					!newRet.contains(where: { $0.hasPrefix("-I") }) ||
+					!newRet.contains(where: { $0.hasPrefix("-L") }) ||
+					!newRet.contains(where: { $0.hasPrefix("-l") })
+				) {
+					logger.notice("Suspicious REPL args found.", metadata: ["args": "\(newRet.joined(separator: " "))"])
+				}
+				ret = newRet
 			}
 		} catch ProcessInvocationError.unexpectedSubprocessExit(let terminationStatus, let terminationReason) {
 			/* Even if we succeed in getting something we deliberately fail as the swift command failed.
