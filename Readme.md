@@ -210,4 +210,4 @@ If you got here via Google, you have a script that uses this tool, if you now in
 Or see the [above installation instructions](#Installation).
 
 [badge-platforms]: https://img.shields.io/badge/platforms-macOS%20%7C%20Linux-lightgrey.svg
-[badge-languages]: https://img.shields.io/badge/swift-5.5%20%7C%205.6%20%7C%205.7-orange.svg
+[badge-languages]: https://img.shields.io/badge/swift-6.*-orange.svg
