@@ -14,9 +14,9 @@ struct SwiftSH : AsyncParsableCommand {
 		subcommands: [
 			Build.self,
 			Clean.self,
-			Create.self,
 			Edit.self,
 			Eject.self,
+			New.self,
 			Run.self
 		],
 		defaultSubcommand: Run.self
